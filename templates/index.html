@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Libre Lists{% endblock %}
+
+{% block navbar_content %}
+<a href="#" onclick="newDatabase()">New database</a>
+<a href="#" onclick="LL_CONFIG_WINDOW.show()">Preferences</a>
+<a href="#" onclick="ABOUT_WINDOW.show()">About</a>
+{% endblock %}
+
+{% block content %}
+    <div class="index-list">
+    <span style="font-size: 32px;margin: 16px 16px 0 16px;">List of databases</span>
+    {% for database in databases %}
+        <div class="index-list__item">
+            <a href="/edit/{{ database }}" style="flex: 1;">{{ database }}</a>
+            <a href="#" onclick="del('{{ database }}')" class="delete">Delete</a>
+        </div>
+    {% endfor %}
+    </div>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/popups.js"></script>
+<script src="/static/js/addons.js"></script>
+{% for addon in addons["index"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
+<script>
+    const ABOUT_WINDOW = new Popup("about-window", "About {{ver}}", "<iframe src='/static/about/about.html'></iframe>", false, "500px", "500px");
+    const LL_CONFIG_WINDOW = new Popup("pref-window", "Preferences", "", false, "500px", "auto");
+    POPUPS_ZONE.appendChild(ABOUT_WINDOW.build());
+    POPUPS_ZONE.appendChild(LL_CONFIG_WINDOW.build());
+
+    async function refreshPreferences(){
+        const data = await getJSONConfig();
+        const applyChanges = document.createElement("button");
+        const restoreChanges = document.createElement("button");
+        applyChanges.innerHTML = "Apply changes";
+        applyChanges.setAttribute("onclick", "applyChanges()");
+        restoreChanges.innerHTML = "Restore";
+        restoreChanges.setAttribute("onclick", "refreshConfig()");
+        LL_CONFIG_WINDOW.resetHTML();
+        for (const i in data) {
+            const label = document.createElement("label");
+            const input = document.createElement("input");
+            label.setAttribute("for", "config_data_" + i);
+            label.innerText = fancyText(i) + ":";
+            input.setAttribute("id", "config_data_" + i);
+            input.setAttribute("attribute_name", i);
+            input.setAttribute("value", data[i]);
+            LL_CONFIG_WINDOW.appendElement(label);
+            LL_CONFIG_WINDOW.appendElement(input);
+        }
+        LL_CONFIG_WINDOW.appendElement(applyChanges);
+        LL_CONFIG_WINDOW.appendElement(restoreChanges);
+    }
+
+    async function applyChanges(){
+        const config = {};
+        const inputs = LL_CONFIG_WINDOW.div.querySelectorAll("input");
+        for (const input of inputs) {
+            config[input.getAttribute("attribute_name")] = input.value.split(",");
+        }
+        const res = await updateConfig("LL_CONFIG", config);
+        alert("Changes applied\nYou may need to refresh the page to see the changes.");
+    }
+
+    async function newDatabase(){
+        const databaseName = prompt("Enter database name:");
+        if (databaseName && isValid(databaseName)){
+            window.location = "/create/" + databaseName;
+        } else if (databaseName) {
+            alert("\"" + databaseName + "\" is not a valid name");
+        }
+    }
+    
+    function del(database){
+        if(confirm("Are you sure you want to delete " + database + "?")){
+            window.location = "/remove/" + database;
+        }
+    }
+
+    refreshPreferences();
+</script>
+{% endblock %}

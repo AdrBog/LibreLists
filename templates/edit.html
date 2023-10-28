@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit {{ id }} - Libre Lists{% endblock %}
+
+{% block navbar_content %}
+<div class="dropdown">
+    <button class="dropbtn">Database
+        <i class="fa fa-caret-down"></i>
+    </button>
+    <div id="database-dropdown" class="dropdown-content">
+        <a href="#" onclick="insertTableDialog()">Add Table</a>
+        <hr>
+        <a href="/json/database/{{id}}" target="_blank">Check JSON</a>
+        <a href="#" onclick="DATABASE_CONFIG_WINDOW.show()">Config</a>
+    </div>
+</div>
+<div class="dropdown">
+    <button class="dropbtn">Current table
+        <i class="fa fa-caret-down"></i>
+    </button>
+    <div id="table-dropdown" class="dropdown-content">
+        <a href="#" id="navbar-add-column" onclick="insertColumnDialog(currentTable)">Add Column</a>
+        <a href="#" id="navbar-add-row" onclick="insertRowDialog(currentTable)">Add Row</a>
+        <hr>
+        <a href="#" onclick="if(someTableIsSelected()){window.open('/json/table/{{ id }}/' + currentTable, '_blank')}">Check JSON table</a>
+        <a href="#" onclick="deleteTableDialog(currentTable)">Delete Table</a>
+    </div>
+</div>
+<div class="dropdown">
+    <button class="dropbtn">SQLite
+        <i class="fa fa-caret-down"></i>
+    </button>
+    <div id="database-dropdown" class="dropdown-content">
+        <a href="#" onclick="SQLQueryDialog()">Execute SQLite</a>
+        <a href="#" onclick="SQLQueryDialog('_DELETE')">Delete item</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="column-menu" class="rclick-menu" style="visibility: hidden;">
+    <span id="column-menu-name" style="padding-bottom: 0px; font-weight: bold;"><b>Name</b></span>
+    <span id="column-menu-type" style="font-size: 12px;">Type</span>
+    <hr>
+    <a href="#" onclick="renameColumnDialog(currentTable, selectedColumn)">Rename Column</a>
+    <hr>
+    <a href="#" onclick="deleteColumnDialog(currentTable, selectedColumn)" style="color: red;">Delete Column</a>
+</div>
+
+<div id="table-list" class="table-list">
+    <span id='database-title' class='database-title'>{{ id }}</span>
+    <button onclick="insertTableDialog()">+ Add table</button>
+    <hr>
+    <div id="table-list-buttons"></div>
+</div>
+<div id="table-editor" class="table-editor">
+</div>
+
+<script src="/static/js/global.js"></script>
+<script src="/static/js/popups.js"></script>
+<script src="/static/js/addons.js"></script>
+{% for addon in addons["edit"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
+<script>
+    const ID = "{{ id }}";
+    const VERSION = "{{ ver }}";
+    const TABLE_EDITOR = document.getElementById("table-editor");
+    const TABLE_LIST = document.getElementById("table-list");
+    const TABLE_LIST_BUTTONS = document.getElementById("table-list-buttons");
+    const COLUMN_MENU = document.getElementById("column-menu");
+    const DATABASE_TITLE = document.getElementById("database-title");
+    const DATABASE_CONFIG_WINDOW = new Popup("database-config-window", "Database configuration", "", false, "500px", "auto");
+    POPUPS_ZONE.appendChild(DATABASE_CONFIG_WINDOW.build());
+
+    var currentTable;
+    var selectedColumn;
+    var clickedElement;
+    var filter = "";
+
+    document.addEventListener("click", (e) => {
+
+        switch (e.target.getAttribute("type")) {
+            case "column-button":
+                COLUMN_MENU.style.visibility = "visible";
+                break;
+            case "cell-button":
+                if (clickedElement) {
+                    clickedElement.classList.remove("selected");
+                }
+                e.target.classList.add("selected");
+                clickedElement = e.target;
+            default:
+                COLUMN_MENU.style.visibility = "hidden";
+                break;
+        }
+    })
+
+    document.addEventListener("dblclick", (e) => {
+        switch (e.target.getAttribute("type")) {
+            case "cell-button":
+                editCellDialog(currentTable, e.target.getAttribute("column"), e.target.parentElement.parentElement.getElementsByClassName("cell-button--id")[0].innerHTML, e.target.innerHTML);
+                break;
+            default:
+                break;
+        }
+    })
+
+    async function refreshDatabaseName(){
+        DATABASE_TITLE.innerText = await getInfo(ID, "display_name");
+    }
+
+    async function refreshAll(){
+        
+    }
+
+    async function refreshConfig(){
+        const data = await getJSONDatabase(ID);
+        const applyChanges = document.createElement("button");
+        const restoreChanges = document.createElement("button");
+        applyChanges.innerHTML = "Apply changes";
+        applyChanges.setAttribute("onclick", "applyChanges()");
+        restoreChanges.innerHTML = "Restore";
+        restoreChanges.setAttribute("onclick", "refreshConfig()");
+        DATABASE_CONFIG_WINDOW.resetHTML();
+        for (const i in data["metadata"]) {
+            const label = document.createElement("label");
+            const input = document.createElement("input");
+            label.setAttribute("for", "config_data_" + i);
+            label.innerText = fancyText(i) + ":";
+            input.setAttribute("id", "config_data_" + i);
+            input.setAttribute("attribute_name", i);
+            input.setAttribute("value", data["metadata"][i]);
+            DATABASE_CONFIG_WINDOW.appendElement(label);
+            DATABASE_CONFIG_WINDOW.appendElement(input);
+        }
+        DATABASE_CONFIG_WINDOW.appendElement(applyChanges);
+        DATABASE_CONFIG_WINDOW.appendElement(restoreChanges);
+    }
+
+    async function applyChanges(){
+        const config = {};
+        const inputs = DATABASE_CONFIG_WINDOW.div.querySelectorAll("input");
+        for (const input of inputs) {
+            config[input.getAttribute("attribute_name")] = input.value.split(",");
+        }
+        const res = await updateConfig("DB_METADATA", config, ID);
+        alert("Changes applied\nYou may need to refresh the page to see the changes.");
+    }
+
+    async function refreshTableList() {
+        const tables = await getTables("{{ id }}");
+        TABLE_LIST_BUTTONS.innerHTML = "";
+        for (const table of tables) {
+            addToTableList(table);
+        }
+    }
+
+    function selectNone(){
+        TABLE_EDITOR.innerHTML = "Select a table to start";
+        currentTable = null;
+    }
+
+    async function select(tableName) {
+        const selectTable = tableName;
+        const data = await getTable("{{ id }}", selectTable, filter);
+        const table = document.createElement("table");
+        const tr = document.createElement("tr");
+        const addCol = document.createElement("th");
+        TABLE_EDITOR.innerHTML = "";
+
+        for (const header of data["columns_names"]) {
+            const th = document.createElement("th");
+            th.innerHTML = "<button class='column-button' type='column-button' id='button_" + header + "' entry-type='" + data["columns_types"][header] + "' onclick='displayColMenu(\"" + header + "\")'>" + header + "</button>";
+            tr.appendChild(th);
+        }
+
+        addCol.innerHTML = "<button class='column-button--plus' onclick='insertColumnDialog(currentTable)' style='text-align:center;'>+</button>";
+        tr.appendChild(addCol);
+
+        table.appendChild(tr);
+
+        for (const row of data["items"]) {
+            const tr = document.createElement("tr");
+            for (const cell of data["columns_names"]) {
+                const td = document.createElement("td");
+                if (cell == data["table_config"]["id_col"])
+                    td.innerHTML = "<button class='cell-button--id' type='cell-button' column='" + cell + "'>" + row[cell] + "</button>";
+                else
+                    td.innerHTML = "<button class='cell-button' type='cell-button' column='" + cell + "'>" + row[cell] + "</button>";
+
+                tr.appendChild(td);
+            }
+            table.appendChild(tr);
+        }
+
+        TABLE_EDITOR.appendChild(table);
+        currentTable = selectTable;
+
+        for (const table of TABLE_LIST.getElementsByTagName("button")) {
+            table.classList.remove("selected");
+        }
+
+        document.getElementById("table_" + selectTable).classList.add("selected");
+
+        return currentTable;
+    }
+
+    function someTableIsSelected(){
+        if (!currentTable) {
+            alert("First, select a table");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    function addToTableList(tableName){
+        const button = document.createElement("button");
+        button.innerHTML = tableName;
+        button.setAttribute("id", "table_" + tableName);
+        button.setAttribute("onclick", "select('" + tableName + "')");
+        TABLE_LIST_BUTTONS.appendChild(button);
+        TABLE_LIST_BUTTONS.appendChild(document.createElement("br"));
+    }
+
+    async function insertTableDialog(){
+        const tableName = prompt("Enter table name:");
+        if(tableName && isValid(tableName)){
+            if (await insertTable("{{ id }}", tableName)){
+                addToTableList(tableName);
+            }
+        } else if (tableName) {
+            alert("Insert a valid name");
+        }
+    }
+
+    async function deleteTableDialog(tableName){
+        if (!someTableIsSelected()){
+            return;
+        }
+        if (confirm("Are you sure you want to delete table \"" + tableName + "\"?")){
+            if (await deleteTable("{{ id }}", tableName)){
+                document.getElementById("table_" + tableName).remove();
+                selectNone();
+            }
+        }
+    }
+
+    async function deleteColumnDialog(tableName, colName){
+        if (confirm("Are you sure you want to delete column \"" + colName + "\" from table \"" + tableName + "\"?")) {
+            if (await deleteColumn("{{id}}", tableName, colName)){
+                select(currentTable);
+            }
+        }
+    }
+
+    async function insertColumnDialog(tableName){
+        if(!someTableIsSelected()){
+            return;
+        }
+        const colName = prompt("Enter column name");
+        if(colName && isValid(colName)){
+            if (await insertColumn("{{ id }}", tableName, colName)){
+                select(tableName);
+            }
+        } else if (colName) {
+            alert("Insert a valid name");
+        }
+    }
+
+    async function renameColumnDialog(tableName, colName){
+        const oldName = colName;
+        const newName = prompt("Enter new column name for \"" + oldName + "\"");
+        if (newName && isValid(newName)) {
+            if (await renameColumn("{{ id }}", tableName, oldName, newName)){
+                select(tableName);
+            }
+        } else if (newName) {
+            alert("\"" + newName + "\" is not a valid name");
+        }
+    }
+
+    async function insertRowDialog(tableName){
+        if(!someTableIsSelected()){
+            return;
+        }
+        await insertRow("{{ id }}", tableName)
+        select(tableName);
+    }
+
+    async function editCellDialog(tableName, colName, id, defaultValue){
+        const newValue = prompt("Edit " + colName + ":", defaultValue);
+        if (newValue){
+            if (await editCell("{{ id }}", tableName, colName, await getTableConfig(ID, tableName, "id_col"), id, newValue)){
+                select(tableName)
+            }
+        }
+    }
+
+    function displayColMenu(header) {
+        selectedColumn = header;
+        const columnButton = document.getElementById("button_" + header);
+        document.getElementById("column-menu-name").innerHTML = header;
+        document.getElementById("column-menu-type").innerHTML = columnButton.getAttribute("entry-type");
+        const viewportOffset = columnButton.getBoundingClientRect();
+        COLUMN_MENU.style.top = (viewportOffset.top + viewportOffset.height) + "px";
+        COLUMN_MENU.style.left = viewportOffset.left + "px";
+    }
+
+    async function SQLQueryDialog(defaultQuery){
+        switch(defaultQuery){
+            case "_DELETE":
+                defaultQuery = `DELETE FROM ${currentTable} WHERE `;
+                break;
+        }
+
+        const query = prompt("Enter SQLite query for databse {{id}}", defaultQuery);
+        if (query){
+            const res = SQLQuery("{{ id }}", query);
+            if(checkErrors(res))
+                select(currentTable);
+        }
+    }
+
+    refreshTableList();
+    refreshDatabaseName();
+    refreshConfig();
+    selectNone();
+</script>
+
+{% endblock %}

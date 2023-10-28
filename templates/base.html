@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="shortcut icon" href="/static/favicon.ico">
+    <title>{% block title %} {% endblock %} </title>
+</head>
+<body>
+    <div class="popups-zone" id="popups-zone">
+        {% block popups %}{% endblock %}
+    </div>
+    <div class="editor">
+        <nav class="navbar" id="navbar">
+            <a href="/" class="home">Libre Lists</a>
+            {% block navbar_content %}{% endblock %}
+        </nav>
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>
