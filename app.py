@@ -13,7 +13,7 @@ ADDONS_FILE = "addons.json"
 TABLE_CONFIG_FILE = "tables.json"
 INFO_FILE = "info.json"
 TABLE_DEFAULT_CONFIG = {"id_col": "id"}
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 # FUNCTIONS
 
@@ -82,11 +82,29 @@ def database_exec(id):
         conn = get_db_connection(id)
         if request.method == 'POST':
             jsonRequest = request.get_json()
-            sql_query = f"""{jsonRequest['query']}"""
-            conn.executescript(sql_query)
+            queries = jsonRequest['query'].split(";")
+            
+            # Generate output
+            for query in queries:
+                output = {"header": {}, "rows": []}
+                result = conn.execute(query)
+                header = {}
+                try:
+                    for h in range(len(result.description)):
+                        header[h] = result.description[h][0]
+                    output["header"] = header
+                    
+                    for row in result.fetchall():
+                        rowJSON = {}
+                        for col in range(len(row)):
+                            rowJSON[result.description[col][0]] = row[col]
+                        output["rows"].append(rowJSON)
+                except:
+                    pass
+
             conn.commit()
         conn.close()
-        return jsonify({"response": "OK"})
+        return jsonify({"response": "OK", "output": output})
     except sqlite3.Error as error:
         return jsonify({"response": "Error", "why": ' '.join(error.args)})
 
@@ -106,7 +124,7 @@ def jsonDatabase(id):
     for table in cursor.fetchall():
         if table[0] not in data["metadata"]["hidden_tables"]:
             data["tables"].append(table[0])
-
+    conn.close()
     return jsonify(data)
 
 @app.route('/json/table/<id>/<table>', methods=('GET', 'POST'))

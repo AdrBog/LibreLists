@@ -4,8 +4,8 @@
 
 {% block navbar_content %}
 <a href="#" onclick="newDatabase()">New database</a>
-<a href="#" onclick="LL_CONFIG_WINDOW.show()">Preferences</a>
-<a href="#" onclick="ABOUT_WINDOW.show()">About</a>
+<a href="#" onclick="preferences()">Preferences</a>
+<a href="#" onclick="about()">About</a>
 {% endblock %}
 
 {% block content %}
@@ -19,66 +19,101 @@
     {% endfor %}
     </div>
 <script src="/static/js/global.js"></script>
-<script src="/static/js/popups.js"></script>
 <script src="/static/js/addons.js"></script>
 {% for addon in addons["index"] %}
 <script src="{{ addon }}"></script>
 {% endfor %}
 <script>
-    const ABOUT_WINDOW = new Popup("about-window", "About {{ver}}", "<iframe src='/static/about/about.html'></iframe>", false, "500px", "500px");
-    const LL_CONFIG_WINDOW = new Popup("pref-window", "Preferences", "", false, "500px", "auto");
-    POPUPS_ZONE.appendChild(ABOUT_WINDOW.build());
-    POPUPS_ZONE.appendChild(LL_CONFIG_WINDOW.build());
+    const POP = new Pops();
 
-    async function refreshPreferences(){
+    async function preferences(){
+        let configPopup = [];
         const data = await getJSONConfig();
-        const applyChanges = document.createElement("button");
-        const restoreChanges = document.createElement("button");
-        applyChanges.innerHTML = "Apply changes";
-        applyChanges.setAttribute("onclick", "applyChanges()");
-        restoreChanges.innerHTML = "Restore";
-        restoreChanges.setAttribute("onclick", "refreshConfig()");
-        LL_CONFIG_WINDOW.resetHTML();
+        configPopup.push({
+            "Element": "h3", "InnerText": "Preferences"
+        });
         for (const i in data) {
-            const label = document.createElement("label");
-            const input = document.createElement("input");
-            label.setAttribute("for", "config_data_" + i);
-            label.innerText = fancyText(i) + ":";
-            input.setAttribute("id", "config_data_" + i);
-            input.setAttribute("attribute_name", i);
-            input.setAttribute("value", data[i]);
-            LL_CONFIG_WINDOW.appendElement(label);
-            LL_CONFIG_WINDOW.appendElement(input);
+            configPopup.push({
+                "Element": "label", 
+                "InnerText": fancyText(i) + ":",
+                "Attributes": {
+                    "For": "config_data_" + i
+                }
+            })
+            configPopup.push({
+                "Element": "input",
+                "Attributes":{
+                    "Value": data[i],
+                    "Id": "config_data_" + i,
+                    "Property": i
+                }
+            })
         }
-        LL_CONFIG_WINDOW.appendElement(applyChanges);
-        LL_CONFIG_WINDOW.appendElement(restoreChanges);
+        configPopup.push({
+            "Element": "button", 
+            "InnerText": "Apply changes",
+            "Attributes": {
+                "Return": 0,
+                "Class": "primary"
+            }
+        });
+        configPopup.push({
+            "Element": "button", 
+            "InnerText": "Discard changes",
+            "Attributes": {
+                "Return": 1
+            }
+        });
+        const props = await POP.custom(configPopup);
+        if (parseInt(props["Return"]) == 0){
+            const exportData = {};
+            for (const prop in props["Properties"]) {
+                exportData[prop] = props["Properties"][prop].split(",");
+            }
+            const res = await updateConfig("LL_CONFIG", exportData);
+            await POP.alert("Changes applied\nYou may need to refresh the page to see the changes.");
+        }
     }
 
-    async function applyChanges(){
-        const config = {};
-        const inputs = LL_CONFIG_WINDOW.div.querySelectorAll("input");
-        for (const input of inputs) {
-            config[input.getAttribute("attribute_name")] = input.value.split(",");
-        }
-        const res = await updateConfig("LL_CONFIG", config);
-        alert("Changes applied\nYou may need to refresh the page to see the changes.");
+    async function about(){
+        await POP.custom([
+            {
+                "Element": "p",
+                "InnerText": "About {{ver}}"
+            },
+            {
+                "Element": "iframe",
+                "Attributes": {
+                    "Src": "/static/about/about.html",
+                    "Width": "500px",
+                    "Height": "450px",
+                    "frameborder": "0"
+                }
+            },
+            {
+                "Element": "button",
+                "InnerText": "X",
+                "Attributes": {
+                    "Return": 0,
+                    "Style": "position: absolute; top: 0; right: 0; min-width: auto;"
+                }
+            }
+        ])
     }
 
     async function newDatabase(){
-        const databaseName = prompt("Enter database name:");
+        const databaseName = await POP.prompt("Enter database name:");
         if (databaseName && isValid(databaseName)){
             window.location = "/create/" + databaseName;
         } else if (databaseName) {
-            alert("\"" + databaseName + "\" is not a valid name");
+            await POP.alert("\"" + databaseName + "\" is not a valid name");
         }
     }
     
-    function del(database){
-        if(confirm("Are you sure you want to delete " + database + "?")){
+    async function del(database){
+        if(await POP.confirm("Are you sure you want to delete " + database + "?")){
             window.location = "/remove/" + database;
         }
     }
-
-    refreshPreferences();
 </script>
 {% endblock %}

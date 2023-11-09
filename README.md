@@ -25,4 +25,7 @@ python -m flask run -p 5001
 
 ## Screenshots
 ![Screenshot1](res/1.png)
-![Screenshot1](res/2.png)
+![Screenshot2](res/2.png)
+![Screenshot3](res/3.png)
+![Screenshot4](res/4.png)
+![Screenshot5](res/5.png)

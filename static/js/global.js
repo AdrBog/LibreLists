@@ -161,3 +161,38 @@ async function updateConfig(context, data, database = ""){
     const resJSON = await res.json();
     return resJSON;
 }
+
+function JSONtoTable(json){
+    const table = document.createElement("table");
+    const trhead = document.createElement("tr");
+    for (const col in json["header"]){
+        const th = document.createElement("th");
+        th.innerText = json["header"][col];
+        trhead.appendChild(th)
+    }
+    table.append(trhead);
+
+    for (const row of json["rows"]) {
+        const tr = document.createElement("tr");
+        for (const col in json["header"]){
+            const td = document.createElement("td");
+            td.innerText = row[json["header"][col]];
+            tr.appendChild(td)
+        }
+        table.appendChild(tr);
+    }
+    return table;
+}
+
+function JSONtoCSV(json){
+    csv = "";
+    for (const col in json["header"])
+        csv += "\"" + json["header"][col] + "\",";
+    csv += "\n";
+    for (const row of json["rows"]) {
+        for (const col in json["header"])
+            csv += "\"" + row[json["header"][col]] + "\",";
+        csv += "\n";
+    }
+    return csv;
+}
