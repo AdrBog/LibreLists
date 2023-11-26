@@ -1,0 +1,14 @@
+:root{
+    --primary-bg-color: #04AA6D;
+    --primary-fg-color: rgb(255, 255, 255);
+    --normal-bg-color: rgb(194, 194, 194);
+    --normal-fg-color: rgb(0, 0, 0);
+
+    --dialogue-bg: #f3f2f1;
+    --dialogue-fg: #000;
+
+    --toolbar-bg:               #333333;
+    --toolbar-fg:               #fff;
+    --toolbar-bg-hover:         #505050;
+    --toolbar-fg-hover:         #fff;
+}

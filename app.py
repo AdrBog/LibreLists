@@ -1,4 +1,4 @@
-import os, shutil, sqlite3, json
+import os, shutil, sqlite3, json, re
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import abort
@@ -12,8 +12,8 @@ CONFIG_FILE = "config.json"
 ADDONS_FILE = "addons.json"
 TABLE_CONFIG_FILE = "tables.json"
 INFO_FILE = "info.json"
-TABLE_DEFAULT_CONFIG = {"id_col": "id"}
-VERSION = "0.1.1"
+TABLE_DEFAULT_CONFIG = {}
+VERSION = "0.2.0"
 
 # FUNCTIONS
 
@@ -153,7 +153,7 @@ def jsonTable(id, table):
             data["columns_types"].update(item) 
 
         for row in rows:
-            item = {"id" : row["id"]}
+            item = {}
             for column in row.keys():
                 item[column] = row[column]
             data["items"].append(item)
@@ -186,3 +186,28 @@ def update():
             json.dump(data, f)
             f.truncate()
     return {"response": "OK"}
+
+@app.route('/dialogue/<page>/<id>', methods=['GET'])
+def dialogue(page, id):
+    return render_template(f"dialogues/{page}.html", id=id, ver=VERSION, addons=updateAddons())
+
+@app.route('/create/table/<id>' ,methods=['POST'])
+def createTable(id):
+    conn = get_db_connection(id)
+    json = request.get_json()
+
+    try:
+        sqlcommand = f"CREATE TABLE IF NOT EXISTS {json['table_info']['name']} ("
+        for col in json['table_info']['columns']:
+            sqlcommand += f"{col} "
+            sqlcommand += f"{json['table_info']['columns'][col]['type']} "
+            sqlcommand += f"{json['table_info']['columns'][col]['constraint']} "
+            sqlcommand += f"{json['table_info']['columns'][col]['null']} "
+            sqlcommand += f"{json['table_info']['columns'][col]['default']},"
+        sqlcommand = sqlcommand[:-1] + ");"
+        print(sqlcommand)
+        conn.execute("%s" % sqlcommand)
+        conn.close()
+        return jsonify({"response": "OK"})
+    except sqlite3.Error as error:
+        return jsonify({"response": "Error", "why": ' '.join(error.args)})

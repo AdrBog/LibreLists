@@ -76,29 +76,7 @@
     }
 
     async function about(){
-        await POP.custom([
-            {
-                "Element": "p",
-                "InnerText": "About {{ver}}"
-            },
-            {
-                "Element": "iframe",
-                "Attributes": {
-                    "Src": "/static/about/about.html",
-                    "Width": "500px",
-                    "Height": "450px",
-                    "frameborder": "0"
-                }
-            },
-            {
-                "Element": "button",
-                "InnerText": "X",
-                "Attributes": {
-                    "Return": 0,
-                    "Style": "position: absolute; top: 0; right: 0; min-width: auto;"
-                }
-            }
-        ])
+        await POP.iframe("About {{ver}}", "/static/about/about.html", "500px", "450px");
     }
 
     async function newDatabase(){

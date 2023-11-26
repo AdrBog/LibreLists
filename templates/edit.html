@@ -22,6 +22,7 @@
         <a href="#" id="navbar-add-column" onclick="SQLWindow('Add column', `alter table ${currentTable} add `, false, true, false)">Add Column</a>
         <a href="#" id="navbar-add-row" onclick="SQLWindow('Add row', `insert into ${currentTable} () values ()`,false, true, false)">Add Row</a>
         <hr>
+        <a href="#" onclick="displayTableDescription()">Table description</a>
         <a href="#" onclick="if(someTableIsSelected()){window.open('/json/table/{{ id }}/' + currentTable, '_blank')}">Check JSON table</a>
         <a href="#" onclick="deleteTableDialog(currentTable)">Delete Table</a>
     </div>
@@ -98,8 +99,7 @@
         switch (e.target.getAttribute("type")) {
             case "cell-button":
                 const colName = e.target.getAttribute("column");
-                const id = e.target.parentElement.parentElement.getElementsByClassName("cell-button--id")[0].innerHTML;
-                SQLWindow("Edit cell", `update ${currentTable} set ${colName} = "${e.target.innerHTML}" where ${idCol} = ${id}`, false , true, false);
+                SQLWindow("Edit cell", `update ${currentTable} set ${colName} = "${e.target.innerHTML}" where `, false , true, false);
                 break;
             default:
                 break;
@@ -203,48 +203,11 @@
         ])
         if (parseInt(query["Return"]) == 0){
             const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
+            if (res["response"] == "Error")
+                await POP.alert("ERROR \n" + res["why"]);
             if (showOutput)
-                try {
-                    const output = await POP.custom([
-                        {
-                            "Element": "span",
-                            "InnerText": "Output"
-                        },
-                        {
-                            "Element": "div",
-                            "InnerHTML": new XMLSerializer().serializeToString(JSONtoTable(res["output"])),
-                            "Attributes":{
-                                "Class": "table-editor",
-                                "Style": "margin-top: 16px;"
-                            }
-                        },
-                        {
-                            "Element": "button",
-                            "InnerText": "X",
-                            "Attributes": {
-                                "Return": 0,
-                                "Style": "position: absolute; top: 0; right: 0; min-width: auto;"
-                            }
-                        },
-                        {
-                            "Element": "button", 
-                            "InnerText": "Export to CSV",
-                            "Attributes": {
-                                "Return": 1,
-                            }
-                        }
-                    ]);
-                    if (parseInt(output["Return"]) == 1){
-                        const downloadFile = document.createElement("a");
-                        downloadFile.href = "data:attachment/text," + encodeURI(JSONtoCSV(res["output"]));
-                        downloadFile.target = "_blank";
-                        downloadFile.download = ID + "_output.csv";
-                        downloadFile.click();
-                    }
-                } catch (error) {
-                    if (res["response"] == "Error")
-                        await POP.alert("ERROR \n" + res["why"]);
-                }
+                await POP.output(res["output"]);
+
             if (update)
                 select(currentTable);
             if (loop)
@@ -288,14 +251,11 @@
             table.appendChild(tr);
 
             for (const row of data["items"]) {
+                console.log(row);
                 const tr = document.createElement("tr");
                 for (const cell of data["columns_names"]) {
                     const td = document.createElement("td");
-                    if (cell == data["table_config"]["id_col"])
-                        td.innerHTML = "<button class='cell-button--id' type='cell-button' column='" + cell + "'>" + row[cell] + "</button>";
-                    else
-                        td.innerHTML = "<button class='cell-button' type='cell-button' column='" + cell + "'>" + row[cell] + "</button>";
-
+                    td.innerHTML = "<button class='cell-button' type='cell-button' column='" + cell + "'>" + row[cell] + "</button>";
                     tr.appendChild(td);
                 }
                 table.appendChild(tr);
@@ -332,20 +292,13 @@
     }
 
     async function insertTableDialog(){
-        const tableName = await POP.prompt("Enter table name:");
-        if(tableName && isValid(tableName)){
-            if (await insertTable("{{ id }}", tableName)){
-                addToTableList(tableName);
-            }
-        } else if (tableName) {
-            await POP.alert("Insert a valid name");
-        }
+        await POP.iframe("Create table in " + databaseName, "/dialogue/createTable/{{ id }}", "900px", "400px");
     }
 
     async function deleteTableDialog(tableName){
-        if (!someTableIsSelected()){
+        if (!someTableIsSelected())
             return;
-        }
+        
         if (await POP.confirm("Are you sure you want to delete table \"" + tableName + "\"?")){
             if (await deleteTable("{{ id }}", tableName)){
                 document.getElementById("table_" + tableName).remove();
@@ -362,6 +315,13 @@
         const viewportOffset = columnButton.getBoundingClientRect();
         COLUMN_MENU.style.top = (viewportOffset.top + viewportOffset.height) + "px";
         COLUMN_MENU.style.left = viewportOffset.left + "px";
+    }
+
+    async function displayTableDescription(){
+        if (!someTableIsSelected())
+            return;
+        const res = await SQLQuery("{{ id }}", `pragma table_info('${currentTable}')`);
+        await POP.output(res["output"], `pragma table_info('${currentTable}')`);
     }
 
     refreshTableList();

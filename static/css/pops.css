@@ -17,6 +17,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ***/
+@import url("themes/light.css");
 
 :root{
     --primary-bg-color: #04AA6D;
@@ -49,13 +50,8 @@
     padding: 10px;
     border: 1px solid rgba(0, 0, 0, 0.2);
     font-family: var(--font);
-    background-color: white;
-    color: var(--normal-fg-color);
-    opacity: 0.5;
-}
-
-.pops-themes-default:hover{
-    opacity: 1;
+    background-color: var(--dialogue-bg);
+    color: var(--dialogue-fg);
 }
 
 .pops-themes-default input, .pops-themes-default select, .pops-themes-default textarea {

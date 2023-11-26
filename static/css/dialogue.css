@@ -1,0 +1,40 @@
+@import url('themes/light.css');
+
+body{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+button{
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 0px;
+    background-color: var(--normal-bg-color);
+    color: var(--normal-fg-color);
+    font-family: var(--font);
+    min-width: 64px;
+    padding: 6px 12px 6px 12px;
+    margin-bottom: 4px;
+}
+
+input, select, textarea {
+    box-sizing: border-box;
+    padding: 6px;
+    margin-bottom: 6px;
+    font-family: var(--font);
+    border-radius: 0;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    margin-right: 8px;
+}
+
+.primary{
+    background-color: var(--primary-bg-color);
+    color: var(--primary-fg-color);
+}
+
+.item{
+    display: flex;
+    flex-direction: row;
+}
+
+button:hover {
+    opacity: 0.8;
+}
