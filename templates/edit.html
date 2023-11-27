@@ -19,7 +19,7 @@
         <i class="fa fa-caret-down"></i>
     </button>
     <div id="table-dropdown" class="dropdown-content">
-        <a href="#" id="navbar-add-column" onclick="SQLWindow('Add column', `alter table ${currentTable} add `, false, true, false)">Add Column</a>
+        <a href="#" id="navbar-add-column" onclick="addColumnDialog()">Add Column</a>
         <a href="#" id="navbar-add-row" onclick="SQLWindow('Add row', `insert into ${currentTable} () values ()`,false, true, false)">Add Row</a>
         <hr>
         <a href="#" onclick="displayTableDescription()">Table description</a>
@@ -57,6 +57,7 @@
 </div>
 
 <script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
 <script src="/static/js/addons.js"></script>
 {% for addon in addons["edit"] %}
 <script src="{{ addon }}"></script>
@@ -240,24 +241,17 @@
 
         try {
             const data = await getTable("{{ id }}", selectTable, filter);
-            idCol = await getTableConfig(ID, tableName, "id_col");
+            const tableColumns = await getTableColumns("{{ id }}", selectTable);
 
-            for (const header of data["columns_names"]) {
-                const th = document.createElement("th");
-                th.innerHTML = "<button class='column-button' type='column-button' id='button_" + header + "' entry-type='" + data["columns_types"][header] + "' onclick='displayColMenu(\"" + header + "\")'>" + header + "</button>";
-                tr.appendChild(th);
-            }
+            for (const column of tableColumns)
+                tr.appendChild(tableHeaderWithMenu(column));
 
             table.appendChild(tr);
 
             for (const row of data["items"]) {
-                console.log(row);
                 const tr = document.createElement("tr");
-                for (const cell of data["columns_names"]) {
-                    const td = document.createElement("td");
-                    td.innerHTML = "<button class='cell-button' type='cell-button' column='" + cell + "'>" + row[cell] + "</button>";
-                    tr.appendChild(td);
-                }
+                for (const column of tableColumns)
+                    tr.appendChild(tableCellEditable(column, row[column["Name"]]));
                 table.appendChild(tr);
             }
 
@@ -293,6 +287,12 @@
 
     async function insertTableDialog(){
         await POP.iframe("Create table in " + databaseName, "/dialogue/createTable/{{ id }}", "900px", "400px");
+    }
+
+    async function addColumnDialog(){
+        if (!someTableIsSelected())
+            return;
+        await POP.iframe("Add column in " + currentTable, "/dialogue/addColumn/{{ id }}/" + currentTable, "900px", "200px");
     }
 
     async function deleteTableDialog(tableName){

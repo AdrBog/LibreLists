@@ -196,3 +196,19 @@ function JSONtoCSV(json){
     }
     return csv;
 }
+
+async function getTableColumns(database, tableName){
+    const res = await SQLQuery(database, `pragma table_info('${tableName}')`)
+    let columns = []
+    for (const x in res["output"]["rows"]){
+        let name = res["output"]["rows"][x]["name"];
+        let type = res["output"]["rows"][x]["type"];
+        let pk = res["output"]["rows"][x]["pk"];
+        columns.push({
+            "Name": name,
+            "Type": type,
+            "PK": pk
+        });
+    }
+    return columns;
+}

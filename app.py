@@ -186,10 +186,11 @@ def update():
             json.dump(data, f)
             f.truncate()
     return {"response": "OK"}
-
+    
 @app.route('/dialogue/<page>/<id>', methods=['GET'])
-def dialogue(page, id):
-    return render_template(f"dialogues/{page}.html", id=id, ver=VERSION, addons=updateAddons())
+@app.route('/dialogue/<page>/<id>/<table>', methods=['GET'])
+def dialogue(page, id, table=""):
+    return render_template(f"dialogues/{page}.html", id=id, ver=VERSION, addons=updateAddons(), table=table)
 
 @app.route('/create/table/<id>' ,methods=['POST'])
 def createTable(id):

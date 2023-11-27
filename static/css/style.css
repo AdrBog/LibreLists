@@ -204,6 +204,10 @@ body {
   background-color: rgba(0,0,0,0.2);
 }
 
+[entry-pk="1"]{
+  font-weight: bold;
+}
+
 
 .icon{
   font-family: 'aurulent-sans-mono';
@@ -286,3 +290,4 @@ body {
   font-weight: bold;
   flex: 1;
 }
+

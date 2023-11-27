@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/dialogue.css">
+    <link rel="stylesheet" href="/static/css/pops.css">
+</head>
+<body>
+    <div id="column-list"></div>
+    <button class="primary" onclick="addColumn()">Add column</button>
+    <script src="/static/js/global.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/pops.js"></script>
+    <script>
+        const POP = new Pops();
+        const columnList = document.getElementById("column-list");
+
+        async function addColumn(){
+            const columnData = columnList.querySelector("div");
+            const name = columnData.querySelectorAll("input")[0].value;
+            const type = columnData.querySelectorAll("select")[0].value;
+            const constraint = columnData.querySelectorAll("select")[1].value;
+            const _null = columnData.querySelectorAll("select")[2].value;
+            const _default = columnData.querySelectorAll("input")[1].value;
+            
+            if (!name){
+                POP.alert("Enter a name")
+                return;
+            }
+            
+            const data = await SQLQuery("{{ id }}", `alter table {{ table }} add column ${name} ${type} ${constraint} ${_null} ${_default};`);
+            
+            if (data["response"] == "Error")
+                await POP.alert("Error:\n" + data["why"]);
+            else
+                await POP.alert("Column added");
+
+            try{
+                parent.refreshTableList();
+            }catch{}
+        }
+
+        columnList.append(addColumnField("", "", "", "", false))
+    </script>
+</body>
+</html>
