@@ -1,72 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/css/dialogue.css">
-    <link rel="stylesheet" href="/static/css/pops.css">
-</head>
-<body>
-    <div>
-        <label>Table name:</label><br>
-        <input type="text" id="table-name">
-    </div>
-    <hr>
-    Columns:
-    <div id="column-list"></div>
-    <button onclick="columnList.append(addColumnField())">+</button>
-    <br>
-    <hr>
-    <br>
-    <button class="primary" onclick="createTable()">Create table</button>
-    <script src="/static/js/global.js"></script>
-    <script src="/static/js/utils.js"></script>
-    <script src="/static/js/pops.js"></script>
-    <script>
-        const POP = new Pops();
-        const columnList = document.getElementById("column-list");
+{% extends 'dialogues/base.html' %}
+{% block dialogue %}
+<div>
+    <label>Table name:</label><br>
+    <input type="text" id="table-name">
+</div>
+<hr>
+Columns:
+<div id="column-list"></div>
+<button onclick="columnList.append(addColumnField())">+</button>
+<br>
+<hr>
+<br>
+<button class="primary" onclick="createTable()">Create table</button>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
+<script src="/static/js/pops.js"></script>
+<script>
+    const columnList = document.getElementById("column-list");
 
-        var tableInfo = {};
+    var tableInfo = {};
 
-        columnList.addEventListener("click", (e) => {
-            if (e.target.getAttribute("delete"))
-                e.target.parentElement.remove();
-        })
+    columnList.addEventListener("click", (e) => {
+        if (e.target.getAttribute("delete"))
+            e.target.parentElement.remove();
+    })
 
-        async function createTable(){
-            tableInfo["name"] = document.getElementById("table-name").value;
-            tableInfo["columns"] = {};
-            tableInfo["table_config"] = {};
-            for (const key of columnList.querySelectorAll("div")) {
-                const column = key.querySelectorAll("input")[0].value;
-                tableInfo["columns"][column] = {}
-                tableInfo["columns"][column]["type"] = key.querySelectorAll("select")[0].value;
-                tableInfo["columns"][column]["constraint"] = key.querySelectorAll("select")[1].value;
-                tableInfo["columns"][column]["null"] = key.querySelectorAll("select")[2].value;
-                tableInfo["columns"][column]["default"] = key.querySelectorAll("input")[1].value;
-            }
-
-            const res = await fetch("/create/table/{{ id }}", {
-                method: "POST",
-                body: JSON.stringify({
-                    "table_info": tableInfo,
-                }),
-                headers: {"Content-type": "application/json; charset=UTF-8"}
-            });
-            const data = await res.json();
-            if (data["response"] == "Error")
-                await POP.alert("Error:\n" + data["why"]);
-            else
-                await POP.alert("Table created");
-            
-            try{
-                parent.refreshTableList();
-            }catch{}
+    async function createTable(){
+        tableInfo["name"] = document.getElementById("table-name").value;
+        tableInfo["columns"] = {};
+        tableInfo["table_config"] = {};
+        for (const key of columnList.querySelectorAll("div")) {
+            const column = key.querySelectorAll("input")[0].value;
+            tableInfo["columns"][column] = {}
+            tableInfo["columns"][column]["type"] = key.querySelectorAll("select")[0].value;
+            tableInfo["columns"][column]["constraint"] = key.querySelectorAll("select")[1].value;
+            tableInfo["columns"][column]["null"] = key.querySelectorAll("select")[2].value;
+            tableInfo["columns"][column]["default"] = key.querySelectorAll("input")[1].value;
         }
 
-        columnList.append(addColumnField("ID", "INTEGER", "PRIMARY KEY", "AUTOINCREMENT", false))
+        const res = await fetch("/create/table/{{ id }}", {
+            method: "POST",
+            body: JSON.stringify({
+                "info": tableInfo,
+            }),
+            headers: {"Content-type": "application/json; charset=UTF-8"}
+        });
+        const data = await res.json();
+        if (data["response"] == "Error")
+            await parent.POP.alert("Error:\n" + data["why"]);
+        else
+            await parent.POP.alert("Table created");
+        
+        try{
+            parent.refreshTableList();
+        }catch{}
+    }
 
-    </script>
-</body>
-</html>
+    columnList.append(addColumnField("ID", "INTEGER", "PRIMARY KEY", "AUTOINCREMENT", false))
+
+</script>
+{% endblock %}

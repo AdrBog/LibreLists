@@ -198,17 +198,30 @@ def createTable(id):
     json = request.get_json()
 
     try:
-        sqlcommand = f"CREATE TABLE IF NOT EXISTS {json['table_info']['name']} ("
-        for col in json['table_info']['columns']:
+        sqlcommand = f"CREATE TABLE IF NOT EXISTS {json['info']['name']} ("
+        for col in json['info']['columns']:
             sqlcommand += f"{col} "
-            sqlcommand += f"{json['table_info']['columns'][col]['type']} "
-            sqlcommand += f"{json['table_info']['columns'][col]['constraint']} "
-            sqlcommand += f"{json['table_info']['columns'][col]['null']} "
-            sqlcommand += f"{json['table_info']['columns'][col]['default']},"
+            sqlcommand += f"{json['info']['columns'][col]['type']} "
+            sqlcommand += f"{json['info']['columns'][col]['constraint']} "
+            sqlcommand += f"{json['info']['columns'][col]['null']} "
+            sqlcommand += f"{json['info']['columns'][col]['default']},"
         sqlcommand = sqlcommand[:-1] + ");"
-        print(sqlcommand)
         conn.execute("%s" % sqlcommand)
         conn.close()
         return jsonify({"response": "OK"})
     except sqlite3.Error as error:
+        conn.close()
+        return jsonify({"response": "Error", "why": ' '.join(error.args)})
+
+@app.route('/simplequery/<id>', methods=['POST'])
+def simpleQuery(id):
+    conn = get_db_connection(id)
+    json = request.get_json()
+    try:
+        conn.execute(json["info"]["query"], json["info"]["values"])
+        conn.commit()
+        conn.close()
+        return jsonify({"response": "OK"})
+    except sqlite3.Error as error:
+        conn.close()
         return jsonify({"response": "Error", "why": ' '.join(error.args)})

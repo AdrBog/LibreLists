@@ -20,7 +20,7 @@
     </button>
     <div id="table-dropdown" class="dropdown-content">
         <a href="#" id="navbar-add-column" onclick="addColumnDialog()">Add Column</a>
-        <a href="#" id="navbar-add-row" onclick="SQLWindow('Add row', `insert into ${currentTable} () values ()`,false, true, false)">Add Row</a>
+        <a href="#" id="navbar-add-row" onclick="addRowDialog()">Insert into</a>
         <hr>
         <a href="#" onclick="displayTableDescription()">Table description</a>
         <a href="#" onclick="if(someTableIsSelected()){window.open('/json/table/{{ id }}/' + currentTable, '_blank')}">Check JSON table</a>
@@ -63,7 +63,7 @@
 <script src="{{ addon }}"></script>
 {% endfor %}
 <script>
-    const POP = new Pops();
+    var POP = new Pops();
     const ID = "{{ id }}";
     const VERSION = "{{ ver }}";
     const TABLE_EDITOR = document.getElementById("table-editor");
@@ -109,8 +109,7 @@
 
     async function refreshDatabaseName(){
         databaseName = await getInfo(ID, "display_name");
-        DATABASE_TITLE.innerText = databaseName;
-        
+        DATABASE_TITLE.innerText = databaseName;  
     }
 
     async function preferences(){
@@ -292,7 +291,13 @@
     async function addColumnDialog(){
         if (!someTableIsSelected())
             return;
-        await POP.iframe("Add column in " + currentTable, "/dialogue/addColumn/{{ id }}/" + currentTable, "900px", "200px");
+        await POP.iframe("Add column in " + currentTable, "/dialogue/addColumn/{{ id }}/" + currentTable, "900px", "100px");
+    }
+
+    async function addRowDialog(){
+        if (!someTableIsSelected())
+            return;
+            await POP.iframe("Insert into " + currentTable, "/dialogue/addRow/{{ id }}/" + currentTable, "400px", "400px");
     }
 
     async function deleteTableDialog(tableName){

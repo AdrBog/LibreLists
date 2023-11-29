@@ -1,0 +1,40 @@
+{% extends 'dialogues/base.html' %}
+{% block dialogue %}
+<table id="row-list"></table>
+<button class="primary" onclick="insertRow()">Insert</button>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
+<script>
+    const rowList = document.getElementById("row-list");
+
+    async function generateList(){
+        const columnList = await getTableColumns("{{ id }}", "{{ table }}");
+        for (const column of columnList) {
+            rowList.append(addRowField(column));
+        }
+    }
+
+    async function insertRow(){
+        let query = "insert into {{ table }} values (";
+        let values = [];
+        for (const tr of rowList.querySelectorAll("tr")) {
+            const column = tr.querySelector("span").innerText;
+            const value = tr.querySelector("input").value;
+            query += "?,";
+            values.push(value);
+        }
+        query = query.slice(0, -1) + ");";
+        const data = await simpleQuery("{{ id }}", query, values);
+        try{
+            if (data["response"] == "Error")
+                parent.POP.alert("Error:\n" + data["why"]);
+            else
+                parent.POP.alert("Item inserted");
+            parent.select("{{ table }}");
+        }catch{}
+    }
+    
+    generateList();
+</script>
+
+{% endblock %}

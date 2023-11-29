@@ -40,7 +40,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     const options = {
         "tableType":{
             "TEXT": "TEXT",
-            "NUMERIC": "NUMERIC",
+            "NUMBER": "NUMBER",
             "INTEGER": "INTEGER",
             "REAL": "REAL",
             "DATE": "DATE"
@@ -56,7 +56,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
             "AUTOINCREMENT": "AUTOINCREMENT"
         }
     };
-    const datalist = ["DEFAULT CURRENT_TIMESTAMP"];
+    const datalist = ["DEFAULT CURRENT_TIMESTAMP", "CHECK (X = 'true' or X = 'false')"];
     const div = document.createElement("div");
     const tableName = document.createElement("input");
     const tableType = document.createElement("select");
@@ -93,4 +93,32 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
         div.append(deleteButton);
     
     return div;
+}
+
+function addRowField(column){
+    const tr = document.createElement("tr");
+    const span = document.createElement("span");
+    const input = document.createElement("input");
+    const listOfTd = [span, input];
+    span.style.minWidth = "100px";
+    span.innerText = column["Name"];
+    switch(column["Type"]){
+        case "INTEGER":
+        case "REAL":
+        case "NUMBER":
+            input.setAttribute("type", "number");
+            break;
+        case "DATE":
+            input.setAttribute("type", "date");
+            break;
+        default:
+            input.setAttribute("type", "text");
+            break;
+    }
+    for (const td of listOfTd) {
+        const e = document.createElement("td");
+        e.append(td);
+        tr.append(e);
+    }
+    return tr;
 }

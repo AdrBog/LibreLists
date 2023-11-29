@@ -38,3 +38,12 @@ input, select, textarea {
 button:hover {
     opacity: 0.8;
 }
+
+table{
+    width: 100%;
+    table-layout: fixed;
+}
+
+table input{
+    width: 100%;
+}

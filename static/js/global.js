@@ -67,6 +67,21 @@ async function SQLQuery(database, query) {
     return resJSON;
 }
 
+async function simpleQuery(database, query, values) {
+    let simpleQuery = {};
+    simpleQuery["query"] = query;
+    simpleQuery["values"] = values;
+    const res = await fetch("/simplequery/" + database, {
+        method: "POST",
+        body: JSON.stringify({
+            "info": simpleQuery,
+        }),
+        headers: {"Content-type": "application/json; charset=UTF-8"}
+    });
+    const resJSON = await res.json();
+    return resJSON;
+}
+
 async function insertTable(database, tableName){
     const res = await SQLQuery(database, "CREATE TABLE " + tableName + "( id INTEGER PRIMARY KEY AUTOINCREMENT )");
     if (checkErrors(res)){
