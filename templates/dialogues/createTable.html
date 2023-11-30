@@ -18,34 +18,35 @@ Columns:
 <script>
     const columnList = document.getElementById("column-list");
 
-    var tableInfo = {};
-
     columnList.addEventListener("click", (e) => {
         if (e.target.getAttribute("delete"))
             e.target.parentElement.remove();
     })
 
     async function createTable(){
-        tableInfo["name"] = document.getElementById("table-name").value;
-        tableInfo["columns"] = {};
-        tableInfo["table_config"] = {};
+        let queryTables = [];
+        let somePrimaryKey = false;
+        let query;
+        let tableName = document.getElementById("table-name").value;
+        
         for (const key of columnList.querySelectorAll("div")) {
             const column = key.querySelectorAll("input")[0].value;
-            tableInfo["columns"][column] = {}
-            tableInfo["columns"][column]["type"] = key.querySelectorAll("select")[0].value;
-            tableInfo["columns"][column]["constraint"] = key.querySelectorAll("select")[1].value;
-            tableInfo["columns"][column]["null"] = key.querySelectorAll("select")[2].value;
-            tableInfo["columns"][column]["default"] = key.querySelectorAll("input")[1].value;
+            const type = key.querySelectorAll("select")[0].value;
+            const constraint = key.querySelectorAll("select")[1].value;
+            const _null = key.querySelectorAll("select")[2].value;
+            const _default = key.querySelectorAll("input")[1].value;
+            if (constraint == "PRIMARY KEY")
+                somePrimaryKey = true;
+            queryTables.push(`${column} ${type} ${constraint} ${_null} ${_default}`);
         }
 
-        const res = await fetch("/create/table/{{ id }}", {
-            method: "POST",
-            body: JSON.stringify({
-                "info": tableInfo,
-            }),
-            headers: {"Content-type": "application/json; charset=UTF-8"}
-        });
-        const data = await res.json();
+        if (!somePrimaryKey)
+            if (!await parent.POP.confirm("You have not created any column with primary key.\nThis will make editing cells more difficult.\nAre your sure you want to continue?"))
+                return;
+
+        query = `create table ${tableName} (${queryTables.join(",")})`;
+
+        const data = await simpleQuery("{{id}}", query);
         if (data["response"] == "Error")
             await parent.POP.alert("Error:\n" + data["why"]);
         else

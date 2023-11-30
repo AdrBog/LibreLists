@@ -100,7 +100,8 @@
         switch (e.target.getAttribute("type")) {
             case "cell-button":
                 const colName = e.target.getAttribute("column");
-                SQLWindow("Edit cell", `update ${currentTable} set ${colName} = "${e.target.innerHTML}" where `, false , true, false);
+                editCellDialog(getRowPrimaryKey(e.target));
+                //SQLWindow("Edit cell", `update ${currentTable} set ${colName} = "${e.target.innerHTML}" where `, false , true, false);
                 break;
             default:
                 break;
@@ -298,6 +299,23 @@
         if (!someTableIsSelected())
             return;
             await POP.iframe("Insert into " + currentTable, "/dialogue/addRow/{{ id }}/" + currentTable, "400px", "400px");
+    }
+
+    async function editCellDialog(primaryKey){
+        if (!primaryKey){
+            await POP.alert("Can't edit this cell, it doesn't have a primary key")
+            return;
+        }
+        await POP.iframe("Update " + currentTable, "/dialogue/editRow/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px");
+    }
+
+    function getRowPrimaryKey(button){
+        const tr = button.parentElement.parentElement;
+        try{
+            return tr.querySelector("[entry-pk='1']").innerText;
+        }catch{
+            return undefined;
+        }
     }
 
     async function deleteTableDialog(tableName){

@@ -41,9 +41,12 @@ button:hover {
 
 table{
     width: 100%;
-    table-layout: fixed;
 }
 
-table input{
+table input, table textarea{
     width: 100%;
+}
+
+table input[type="color"]{
+    padding: 0;
 }

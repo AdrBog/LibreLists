@@ -186,32 +186,12 @@ def update():
             json.dump(data, f)
             f.truncate()
     return {"response": "OK"}
-    
+
 @app.route('/dialogue/<page>/<id>', methods=['GET'])
 @app.route('/dialogue/<page>/<id>/<table>', methods=['GET'])
-def dialogue(page, id, table=""):
-    return render_template(f"dialogues/{page}.html", id=id, ver=VERSION, addons=updateAddons(), table=table)
-
-@app.route('/create/table/<id>' ,methods=['POST'])
-def createTable(id):
-    conn = get_db_connection(id)
-    json = request.get_json()
-
-    try:
-        sqlcommand = f"CREATE TABLE IF NOT EXISTS {json['info']['name']} ("
-        for col in json['info']['columns']:
-            sqlcommand += f"{col} "
-            sqlcommand += f"{json['info']['columns'][col]['type']} "
-            sqlcommand += f"{json['info']['columns'][col]['constraint']} "
-            sqlcommand += f"{json['info']['columns'][col]['null']} "
-            sqlcommand += f"{json['info']['columns'][col]['default']},"
-        sqlcommand = sqlcommand[:-1] + ");"
-        conn.execute("%s" % sqlcommand)
-        conn.close()
-        return jsonify({"response": "OK"})
-    except sqlite3.Error as error:
-        conn.close()
-        return jsonify({"response": "Error", "why": ' '.join(error.args)})
+@app.route('/dialogue/<page>/<id>/<table>/<pk>', methods=['GET'])
+def dialogue(page, id, table="", pk=""):
+    return render_template(f"dialogues/{page}.html", id=id, ver=VERSION, addons=updateAddons(), table=table, pk=pk)
 
 @app.route('/simplequery/<id>', methods=['POST'])
 def simpleQuery(id):

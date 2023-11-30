@@ -40,10 +40,15 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     const options = {
         "tableType":{
             "TEXT": "TEXT",
+            "VARCHAR": "VARCHAR",
+            "LONGVARCHAR": "LONGVARCHAR",
             "NUMBER": "NUMBER",
             "INTEGER": "INTEGER",
             "REAL": "REAL",
-            "DATE": "DATE"
+            "BOOLEAN": "BOOLEAN",
+            "DATE": "DATE",
+            "COLOR": "COLOR",
+            "BLOB": "BLOB"
         },
         "tableConstraint":{
             "": "",
@@ -56,7 +61,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
             "AUTOINCREMENT": "AUTOINCREMENT"
         }
     };
-    const datalist = ["DEFAULT CURRENT_TIMESTAMP", "CHECK (X = 'true' or X = 'false')"];
+    const datalist = ["DEFAULT CURRENT_TIMESTAMP", "DEFAULT (DATE('NOW'))", "CHECK (X = 0 or X = 1)"];
     const div = document.createElement("div");
     const tableName = document.createElement("input");
     const tableType = document.createElement("select");
@@ -95,13 +100,38 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     return div;
 }
 
+function getPrimaryKeyColumn(columnList){
+    for (const column of columnList) {
+        if(column["PK"] != 0)
+            return column["Name"];
+    }
+    return undefined;
+}
+
 function addRowField(column){
     const tr = document.createElement("tr");
+    const checkbox = document.createElement("input");
     const span = document.createElement("span");
     const input = document.createElement("input");
-    const listOfTd = [span, input];
+    const select = document.createElement("select");
+    const textarea = document.createElement("textarea");
+    let listOfTd = [checkbox, span, input];
+    const BOOLEAN_OPTIONS = [0, 1];
+
+    checkbox.setAttribute("type", "checkbox");
+    checkbox.setAttribute("type2", "checkbox");
+    input.setAttribute("type2", "input");
+    select.setAttribute("type2", "input");
+    textarea.setAttribute("type2", "input");
+
     span.style.minWidth = "100px";
     span.innerText = column["Name"];
+
+    if (column["Sequence"])
+        input.value = column["Sequence"] + 1;
+    else 
+        checkbox.setAttribute("checked", true);
+
     switch(column["Type"]){
         case "INTEGER":
         case "REAL":
@@ -111,10 +141,27 @@ function addRowField(column){
         case "DATE":
             input.setAttribute("type", "date");
             break;
+        case "COLOR":
+            input.setAttribute("type", "color");
+            break;
+        case "VARCHAR":
+        case "LONGVARCHAR":
+            listOfTd = [checkbox, span, textarea];
+            break;
+        case "BOOLEAN":
+            for (const booleanOption of BOOLEAN_OPTIONS) {
+                const option = document.createElement("option");
+                option.value = booleanOption;
+                option.innerText = booleanOption;
+                select.append(option);
+            }
+            listOfTd = [checkbox, span, select];
+            break;
         default:
             input.setAttribute("type", "text");
             break;
     }
+    
     for (const td of listOfTd) {
         const e = document.createElement("td");
         e.append(td);

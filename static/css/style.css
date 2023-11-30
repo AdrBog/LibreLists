@@ -182,7 +182,7 @@ body {
   text-align: left;
   background-color: transparent;
   border: 2px solid transparent;
-  user-select: text;
+  user-select: none;
 }
 
 .table-editor table td .cell-button--id {
@@ -204,10 +204,9 @@ body {
   background-color: rgba(0,0,0,0.2);
 }
 
-[entry-pk="1"]{
-  font-weight: bold;
+[entry-pk]:not([entry-pk="0"]){
+  font-weight: bolder;
 }
-
 
 .icon{
   font-family: 'aurulent-sans-mono';

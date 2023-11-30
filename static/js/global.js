@@ -67,7 +67,7 @@ async function SQLQuery(database, query) {
     return resJSON;
 }
 
-async function simpleQuery(database, query, values) {
+async function simpleQuery(database, query, values = []) {
     let simpleQuery = {};
     simpleQuery["query"] = query;
     simpleQuery["values"] = values;
@@ -213,17 +213,17 @@ function JSONtoCSV(json){
 }
 
 async function getTableColumns(database, tableName){
-    const res = await SQLQuery(database, `pragma table_info('${tableName}')`)
+    const tableInfo = await SQLQuery(database, `pragma table_info('${tableName}')`)
+    const sequence = await SQLQuery(database, `select * from sqlite_sequence where name='${tableName}'`);
     let columns = []
-    for (const x in res["output"]["rows"]){
-        let name = res["output"]["rows"][x]["name"];
-        let type = res["output"]["rows"][x]["type"];
-        let pk = res["output"]["rows"][x]["pk"];
-        columns.push({
-            "Name": name,
-            "Type": type,
-            "PK": pk
-        });
+    for (const x in tableInfo["output"]["rows"]){
+        let columnInfo = {}
+        columnInfo["Name"] = tableInfo["output"]["rows"][x]["name"];
+        columnInfo["Type"] = tableInfo["output"]["rows"][x]["type"];
+        columnInfo["PK"] = tableInfo["output"]["rows"][x]["pk"];
+        if (columnInfo["PK"] == 1 && sequence["output"]["rows"].length > 0)
+            columnInfo["Sequence"] = sequence["output"]["rows"][0]["seq"];
+        columns.push(columnInfo);
     }
     return columns;
 }

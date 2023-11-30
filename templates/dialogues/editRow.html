@@ -1,38 +1,45 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
 <table id="row-list"></table>
-<button class="primary" onclick="insertRow()">Insert</button>
+<button class="primary" onclick="updateRow()">Update</button>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 <script>
     const rowList = document.getElementById("row-list");
+    let primaryKeyColumn;
 
     async function generateList(){
         const columnList = await getTableColumns("{{ id }}", "{{ table }}");
-        for (const column of columnList) {
+        primaryKeyColumn = getPrimaryKeyColumn(columnList);
+        let item = await SQLQuery("{{ id }}", `select * from {{ table }} where ${primaryKeyColumn} = {{pk}}`)
+        item = item["output"]["rows"][0];
+
+        for (const column of columnList)
             rowList.append(addRowField(column));
+        
+        for (const div of rowList.querySelectorAll("tr")) {
+            const input = div.querySelector("[type2='input']");
+            const column = div.querySelector("span").innerText;
+            input.value = item[column];
         }
     }
 
-    async function insertRow(){
-        let queryColumns = [];
+    async function updateRow(){
         let queryFields = [];
-        let queryValues = [];
         for (const tr of rowList.querySelectorAll("tr")) {
             if (!tr.querySelector("[type2='checkbox']").checked)
                 continue;
             const column = tr.querySelector("span").innerText;
             const value = tr.querySelector("[type2='input']").value;
-            queryColumns.push(column);
-            queryFields.push("?");
-            queryValues.push(value);
+            queryFields.push(`${column} = '${value}'`);
         }
-        const data = await simpleQuery("{{ id }}", `insert into {{ table }}(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+
+        const data = await simpleQuery("{{ id }}", `update {{ table }} set ${queryFields.join(',')} where ${primaryKeyColumn} = {{pk}}`);
         try{
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);
             else
-                parent.POP.alert("Item inserted");
+                parent.POP.alert("Item edited");
             parent.select("{{ table }}");
         }catch{}
     }
