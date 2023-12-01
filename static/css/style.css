@@ -100,12 +100,13 @@ body {
 }
 
 .primary{
-  background-color: #04AA6D;
-  color: white;
+  background-color: var(--primary-bg-color);
+  color: var(--primary-fg-color);
 }
 
 .home{
-	background-color: #04AA6D !important;
+	background-color: var(--primary-bg-color) !important;
+  color: var(--primary-fg-color);
 }
 
 .container{
@@ -138,6 +139,11 @@ body {
   overflow: scroll;
 }
 
+#table-list-buttons button{
+  border-color:rgba(0,0,0,0.2);
+  border-radius: 0;
+}
+
 .table-list button {
   width: 100%;
 }
@@ -151,6 +157,7 @@ body {
   overflow: scroll;
   background-color: white;
   border: 1px solid rgba(0,0,0,0.2);
+  user-select: none;
 }
 
 
@@ -173,35 +180,28 @@ body {
   text-align: left;
   background-color: #04AA6D;
   color: white;
+  font-weight: normal;
 }
 
-.table-editor table td [class^="cell-button"] {
-  width: 100%;
-  height: 100%;
-  padding: 8px;
-  text-align: left;
-  background-color: transparent;
-  border: 2px solid transparent;
-  user-select: none;
+.table-editor table td {
+  max-width: 400px;
+  overflow-wrap: break-word;
 }
 
-.table-editor table td .cell-button--id {
+.table-editor table td.cell-button--id {
   font-weight: bold;
 }
 
-.table-editor table th [class^="column-button"] {
+.table-editor table th {
   font-size: 16px;
-  width: 100%;
-  height: 100%;
   padding: 8px;
   text-align: left;
   color: white;
-  background-color: transparent;
   border: 0;
 }
 
-.table-editor table th [class^="column-button"]:hover {
-  background-color: rgba(0,0,0,0.2);
+.table-editor table th:hover {
+  background-color: #02884d;
 }
 
 [entry-pk]:not([entry-pk="0"]){
@@ -215,7 +215,6 @@ body {
 
 .selected{
   background-color: #9bf8bf;
-  border: 2px dotted black !important;
 }
 
 .rclick-menu{
@@ -246,47 +245,3 @@ body {
 .rclick-menu a:hover{
   background-color: rgba(0,0,0,0.2);
 }
-
-.popups-zone .popup {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  padding: 16px;
-  max-height: 90%;
-  top: 50%;
-  left: 50%;
-  background-color: #f2f2f2;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(0,0,0,0.2);
-  z-index: 999;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-}
-
-.popup iframe{
-  flex: 1;
-  border: 0;
-}
-
-.popup .body{
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: scroll;
-}
-.popup .body hr{
-  width: 100%;
-}
-
-.popup .titlebar{
-  display: flex;
-  flex-direction: row;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(0,0,0,0.2);
-}
-
-.titlebar .title{
-  font-weight: bold;
-  flex: 1;
-}
-

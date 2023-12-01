@@ -1,5 +1,7 @@
 CHANGELOG
-
+V 0.2.0
+	- Added new dialog windows to ease database creation and manipulation
+	- Improved and optimized program logic
 V 0.1.1
 	- Implementation of Pops (https://github.com/AdrBog/Pops) for Libre Lists, which eases the management of pop-up windows.
 	- Fully SQLite command execution (include SELECT)

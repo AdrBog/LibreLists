@@ -1,3 +1,26 @@
+/*
+  This file is part of Libre Lists
+
+  Libre Lists is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Libre Lists is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Libre Lists.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
+/**
+ * In utils.js you will find useful functions to build the GUI,
+ * make it easy to generate interactive tables and forms.
+ */
+
 function appendOption(innerText, value, select, selectedValue = ""){
     const option = document.createElement("option");
     option.innerText = innerText;
@@ -11,34 +34,25 @@ function appendOption(innerText, value, select, selectedValue = ""){
 
 function tableHeaderWithMenu(column){
     const th = document.createElement("th");
-    const button = document.createElement("button");
-    button.classList.add("column-button");
-    button.setAttribute("type", "column-button");
-    button.id = "button_" + column["Name"];
-    button.setAttribute("entry-type", column["Type"]);
-    button.setAttribute("entry-pk", column["PK"]);
-    button.setAttribute("onclick", `displayColMenu("${column["Name"]}")`);
-    button.innerText = column["Name"];
-    th.append(button);
+    th.id = "button_" + column["Name"];
+    th.setAttribute("entry-type", column["Type"]);
+    th.setAttribute("entry-pk", column["PK"]);
+    th.innerText = column["Name"];
     return th;
 }
 
 function tableCellEditable(column, value){
     const td = document.createElement("td");
-    const button = document.createElement("button");
-    button.classList.add("cell-button");
-    button.setAttribute("type", "cell-button");
-    button.setAttribute("entry-pk", column["PK"]);
-    button.setAttribute("column", column["Name"]);
-    button.innerText = value;
-    td.append(button);
+    td.setAttribute("entry-pk", column["PK"]);
+    td.setAttribute("column", column["Name"]);
+    td.innerText = value;
     return td;
 }
 
 function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _delete = true){
             
     const options = {
-        "tableType":{
+        "columnType":{
             "TEXT": "TEXT",
             "VARCHAR": "VARCHAR",
             "LONGVARCHAR": "LONGVARCHAR",
@@ -50,12 +64,12 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
             "COLOR": "COLOR",
             "BLOB": "BLOB"
         },
-        "tableConstraint":{
+        "columnPrimaryKey":{
             "": "",
             "PRIMARY KEY": "PRIMARY KEY",
             "UNIQUE": "UNIQUE"
         },
-        "tableNull": {
+        "columnNull": {
             "": "",
             "NOT NULL": "NOT NULL",
             "AUTOINCREMENT": "AUTOINCREMENT"
@@ -63,37 +77,43 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     };
     const datalist = ["DEFAULT CURRENT_TIMESTAMP", "DEFAULT (DATE('NOW'))", "CHECK (X = 0 or X = 1)"];
     const div = document.createElement("div");
-    const tableName = document.createElement("input");
-    const tableType = document.createElement("select");
-    const tableConstraint = document.createElement("select");
-    const tableNull = document.createElement("select");
-    const tableDefault = document.createElement("input");
-    const tableDefaultList = document.createElement("datalist");
+    const columnName = document.createElement("input");
+    const columnType = document.createElement("select");
+    const columnPrimaryKey = document.createElement("select");
+    const columnNull = document.createElement("select");
+    const columnExtra = document.createElement("input");
+    const columnExtraList = document.createElement("datalist");
     const deleteButton = document.createElement("button");
 
     div.classList.add("item");
-    tableName.placeholder = "NAME";
-    tableName.value = name;
-    tableDefault.placeholder = "EXTRA (E.G. DEFAULT, CHECK)";
-    tableDefault.setAttribute("list", "default-options");
-    tableDefaultList.id = "default-options";
+    columnName.placeholder = "NAME";
+    columnName.value = name;
+    columnExtra.placeholder = "EXTRA (E.G. DEFAULT, CHECK)";
+    columnExtra.setAttribute("list", "default-options");
+    columnExtraList.id = "default-options";
     for (const key of datalist) {
         const option = document.createElement("option");
         option.value = key;
-        tableDefaultList.append(option);
+        columnExtraList.append(option);
     }
 
     for (const key in options)
         for (const opt in options[key])
             appendOption(opt, options[key][opt], eval(key),
-                (key == "tableType") ? type :
-                (key == "tableConstraint") ? constraint : _null
+                (key == "columnType") ? type :
+                (key == "columnPrimaryKey") ? constraint : _null
             )
 
     deleteButton.innerText = "X";
     deleteButton.setAttribute("delete", true);
 
-    div.append(tableName, tableType, tableConstraint, tableNull, tableDefault, tableDefaultList);
+    columnName.title = "Column name, DON'T USE WHITESPACES, use _ if you want to separate words";
+    columnType.title = "The type of information to be stored, note that SQLite does not usually check if the type of information is valid.";
+    columnPrimaryKey.title = "Sets the PRIMARY KEY or UNIQUE contraint, this option does not usually work once the table is created.";
+    columnNull.title = "Sets the NOT NULL or AUTOINCREMENT contraint, note that AUTOINCREMENT only works in INTEGER PRIMARY KEY";
+    columnExtra.title = "Add extra constraints, such as DEFAULT or CHECK";
+
+    div.append(columnName, columnType, columnPrimaryKey, columnNull, columnExtra, columnExtraList);
     if (_delete)
         div.append(deleteButton);
     
@@ -149,12 +169,8 @@ function addRowField(column){
             listOfTd = [checkbox, span, textarea];
             break;
         case "BOOLEAN":
-            for (const booleanOption of BOOLEAN_OPTIONS) {
-                const option = document.createElement("option");
-                option.value = booleanOption;
-                option.innerText = booleanOption;
-                select.append(option);
-            }
+            for (const booleanOption of BOOLEAN_OPTIONS)
+                appendOption(booleanOption, booleanOption, select);
             listOfTd = [checkbox, span, select];
             break;
         default:

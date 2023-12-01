@@ -16,12 +16,14 @@
 
 */
 
-const POPUPS_ZONE =                     document.getElementById("popups-zone");
+// This file may be deprecated, instead look at global.js or utils.js
+
 const NAVBAR =                          document.getElementById("navbar");
 const NAVBAR_ADD_COLUMN_BUTTON =        document.getElementById("navbar-add-column");
 const NAVBAR_ADD_ROW_BUTTON =           document.getElementById("navbar-add-row");
 const DATABASE_DROPDOWN =               document.getElementById("database-dropdown");
 const TABLE_DROPDOWN =                  document.getElementById("table-dropdown");
+
 function fancyText(string){
     return string.charAt(0).toUpperCase() + string.slice(1).replace(/_/g, " ");
 }

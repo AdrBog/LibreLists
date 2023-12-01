@@ -1,0 +1,76 @@
+{% extends 'dialogues/base.html' %}
+{% block dialogue %}
+<table id="row-list"></table>
+<button class="primary" onclick="updateRecord()">Update</button>
+<button onclick="deleteRecord()">Delete record</button>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
+<script>
+    const rowList = document.getElementById("row-list");
+    let primaryKeyColumn;
+
+    async function generateList(){
+        const columnList = await getTableColumns("{{ id }}", "{{ table }}");
+        primaryKeyColumn = getPrimaryKeyColumn(columnList);
+        let item = await SQLQuery("{{ id }}", `select * from {{ table }} where ${primaryKeyColumn} = {{pk}}`)
+        item = item["output"]["rows"][0];
+
+        for (const column of columnList)
+            rowList.append(addRowField(column));
+        
+        for (const tr of rowList.querySelectorAll("tr")) {
+            const input = tr.querySelector("[type2='input']");
+            const column = tr.querySelector("span").innerText;
+            input.value = item[column];
+        }
+    }
+
+    async function updateRecord(){
+        let queryFields = [];
+        let values = [];
+        for (const tr of rowList.querySelectorAll("tr")) {
+            if (!tr.querySelector("[type2='checkbox']").checked)
+                continue;
+            const column = tr.querySelector("span").innerText;
+            const value = tr.querySelector("[type2='input']").value;
+            queryFields.push(`${column} = ?`);
+            values.push(value);
+        }
+
+        const data = await simpleQuery("{{ id }}", `update {{ table }} set ${queryFields.join(',')} where ${primaryKeyColumn} = {{pk}}`, values);
+        
+            if (data["response"] == "Error")
+                parent.POP.alert("Error:\n" + data["why"]);
+            else
+                parent.POP.alert("Record edited");
+
+        try{
+            parent.select("{{ table }}");
+        }catch{}
+    }
+
+    async function deleteRecord(){
+        if (await parent.POP.confirm(`Are you sure you want to delete the record where ${primaryKeyColumn} = {{pk}}?`)){
+            const data = await simpleQuery("{{ id }}", `delete from {{ table }} where ${primaryKeyColumn} = {{pk}}`);
+            if (data["response"] == "Error")
+                parent.POP.alert("Error:\n" + data["why"]);
+            else{
+                parent.POP.alert("Record deleted");
+                clearForm();
+            }
+
+            try{
+                parent.select("{{ table }}");
+            }catch{}
+        }
+    }
+
+    function clearForm(){
+        for (const e of document.querySelectorAll("table, button"))
+            e.remove();
+    }
+    
+    generateList();
+</script>
+
+{% endblock %}

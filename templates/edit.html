@@ -20,7 +20,7 @@
     </button>
     <div id="table-dropdown" class="dropdown-content">
         <a href="#" id="navbar-add-column" onclick="addColumnDialog()">Add Column</a>
-        <a href="#" id="navbar-add-row" onclick="addRowDialog()">Insert into</a>
+        <a href="#" id="navbar-add-row" onclick="addRecordDialog()">Add Record</a>
         <hr>
         <a href="#" onclick="displayTableDescription()">Table description</a>
         <a href="#" onclick="if(someTableIsSelected()){window.open('/json/table/{{ id }}/' + currentTable, '_blank')}">Check JSON table</a>
@@ -79,31 +79,26 @@
     var idCol;
     var filter = "";
 
-    document.addEventListener("click", (e) => {
-
-        switch (e.target.getAttribute("type")) {
-            case "column-button":
-                COLUMN_MENU.style.visibility = "visible";
+    TABLE_EDITOR.addEventListener("click", (e) => {
+        COLUMN_MENU.style.visibility = "hidden";
+        switch(e.target.nodeName.toLowerCase()){
+            case "th":
+                displayColMenu(e.target.innerText);
                 break;
-            case "cell-button":
-                if (clickedElement) 
+            case "td":
+                if (clickedElement)
                     clickedElement.classList.remove("selected");
                 e.target.classList.add("selected");
                 clickedElement = e.target;
-            default:
-                COLUMN_MENU.style.visibility = "hidden";
-                break;
+                break;    
         }
     })
 
-    document.addEventListener("dblclick", (e) => {
-        switch (e.target.getAttribute("type")) {
-            case "cell-button":
+    TABLE_EDITOR.addEventListener("dblclick", (e) => {
+        switch (e.target.nodeName.toLowerCase()) {
+            case "td":
                 const colName = e.target.getAttribute("column");
-                editCellDialog(getRowPrimaryKey(e.target));
-                //SQLWindow("Edit cell", `update ${currentTable} set ${colName} = "${e.target.innerHTML}" where `, false , true, false);
-                break;
-            default:
+                editRecordDialog(getRowPrimaryKey(e.target));
                 break;
         }
     })
@@ -295,22 +290,22 @@
         await POP.iframe("Add column in " + currentTable, "/dialogue/addColumn/{{ id }}/" + currentTable, "900px", "100px");
     }
 
-    async function addRowDialog(){
+    async function addRecordDialog(){
         if (!someTableIsSelected())
             return;
-            await POP.iframe("Insert into " + currentTable, "/dialogue/addRow/{{ id }}/" + currentTable, "400px", "400px");
+        await POP.iframe("Add record into " + currentTable, "/dialogue/addRecord/{{ id }}/" + currentTable, "400px", "400px");
     }
 
-    async function editCellDialog(primaryKey){
+    async function editRecordDialog(primaryKey){
         if (!primaryKey){
-            await POP.alert("Can't edit this cell, it doesn't have a primary key")
+            await POP.alert("Can't edit this record, it doesn't have a primary key")
             return;
         }
-        await POP.iframe("Update " + currentTable, "/dialogue/editRow/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px");
+        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px");
     }
 
-    function getRowPrimaryKey(button){
-        const tr = button.parentElement.parentElement;
+    function getRowPrimaryKey(td){
+        const tr = td.parentElement;
         try{
             return tr.querySelector("[entry-pk='1']").innerText;
         }catch{
@@ -338,6 +333,7 @@
         const viewportOffset = columnButton.getBoundingClientRect();
         COLUMN_MENU.style.top = (viewportOffset.top + viewportOffset.height) + "px";
         COLUMN_MENU.style.left = viewportOffset.left + "px";
+        COLUMN_MENU.style.visibility = "visible";
     }
 
     async function displayTableDescription(){
