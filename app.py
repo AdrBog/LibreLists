@@ -2,6 +2,7 @@ import os, shutil, sqlite3, json, re
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import abort
+import base64
 
 
 app = Flask(__name__)
@@ -86,19 +87,23 @@ def database_exec(id):
             
             # Generate output
             for query in queries:
-                output = {"header": {}, "rows": []}
+                output = {"header": [], "records": []}
+                header = []
                 result = conn.execute(query)
-                header = {}
                 try:
                     for h in range(len(result.description)):
-                        header[h] = result.description[h][0]
-                    output["header"] = header
+                        headerJSON = {}
+                        headerJSON["Name"] = result.description[h][0]
+                        headerJSON["Type"] = ""
+                        headerJSON["PK"] = 0
+                        output["header"].append(headerJSON)
                     
                     for row in result.fetchall():
                         rowJSON = {}
                         for col in range(len(row)):
-                            rowJSON[result.description[col][0]] = row[col]
-                        output["rows"].append(rowJSON)
+                            if (type(row[col]) != bytes):
+                                rowJSON[result.description[col][0]] = row[col]
+                        output["records"].append(rowJSON)
                 except:
                     pass
 
@@ -129,37 +134,23 @@ def jsonDatabase(id):
 
 @app.route('/json/table/<id>/<table>', methods=('GET', 'POST'))
 def jsonTable(id, table):
-    data = {"columns_names" : [], "columns_types" : {}, "table_config": {}, "items" : []}
+    records = []
     try:
         filters = request.args.get('f', type = str)
         conn = get_db_connection(id)
         rows = conn.execute(f'SELECT * FROM {table} {filters}').fetchall()
         conn.close()
-
-        with open(f"{PROJECT_DIR}/{id}/{TABLE_CONFIG_FILE}") as f:
-            configs = json.load(f)
-
-        try: 
-            for config in configs[table]:
-                data["table_config"].update({config : configs[table][config]})
-        except:
-            data["table_config"].update(TABLE_DEFAULT_CONFIG)
-
-        for column in get_columns_names(id, table):
-            data["columns_names"].append(column)
-
-        for x in range(len(get_columns_types(id, table))):
-            item = {get_columns_names(id, table)[x] : get_columns_types(id, table)[x]}
-            data["columns_types"].update(item) 
-
         for row in rows:
             item = {}
             for column in row.keys():
-                item[column] = row[column]
-            data["items"].append(item)
-        return jsonify(data)
+                if (type(row[column]) != bytes):
+                    item[column] = row[column]
+                else:
+                    item[column] = "[Can't display binary data]"
+            records.append(item)
+        return jsonify(records)
     except sqlite3.Error as error:
-        return jsonify(data)
+        return jsonify(records)
 
 @app.route('/json/config', methods=('GET', 'POST'))
 def jsonConfig():

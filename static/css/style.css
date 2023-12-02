@@ -188,6 +188,10 @@ body {
   overflow-wrap: break-word;
 }
 
+.table-editor table td:hover{
+  background-color: rgba(0,0,0,0.1);
+}
+
 .table-editor table td.cell-button--id {
   font-weight: bold;
 }
@@ -214,7 +218,7 @@ body {
 }
 
 .selected{
-  background-color: #9bf8bf;
+  background-color: #9bf8bf !important;
 }
 
 .rclick-menu{

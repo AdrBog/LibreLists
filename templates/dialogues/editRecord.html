@@ -12,8 +12,8 @@
     async function generateList(){
         const columnList = await getTableColumns("{{ id }}", "{{ table }}");
         primaryKeyColumn = getPrimaryKeyColumn(columnList);
-        let item = await SQLQuery("{{ id }}", `select * from {{ table }} where ${primaryKeyColumn} = {{pk}}`)
-        item = item["output"]["rows"][0];
+        let item = await SQLQuery("{{ id }}", `select * from {{ table }} where ${primaryKeyColumn} = '{{pk}}'`)
+        item = item["output"]["records"][0];
 
         for (const column of columnList)
             rowList.append(addRowField(column));
@@ -37,7 +37,7 @@
             values.push(value);
         }
 
-        const data = await simpleQuery("{{ id }}", `update {{ table }} set ${queryFields.join(',')} where ${primaryKeyColumn} = {{pk}}`, values);
+        const data = await simpleQuery("{{ id }}", `update {{ table }} set ${queryFields.join(',')} where ${primaryKeyColumn} = '{{pk}}'`, values);
         
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);
@@ -50,8 +50,8 @@
     }
 
     async function deleteRecord(){
-        if (await parent.POP.confirm(`Are you sure you want to delete the record where ${primaryKeyColumn} = {{pk}}?`)){
-            const data = await simpleQuery("{{ id }}", `delete from {{ table }} where ${primaryKeyColumn} = {{pk}}`);
+        if (await parent.POP.confirm(`Are you sure you want to delete the record where ${primaryKeyColumn} = '{{pk}}'?`)){
+            const data = await simpleQuery("{{ id }}", `delete from {{ table }} where ${primaryKeyColumn} = '{{pk}}'`);
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);
             else{

@@ -230,27 +230,16 @@
         const table = document.createElement("table");
         const tr = document.createElement("tr");
         TABLE_EDITOR.innerHTML = "";
+        COLUMN_MENU.style.visibility = "hidden";
 
         for (const table of TABLE_LIST.getElementsByTagName("button")) 
                 table.classList.remove("selected");
 
         try {
-            const data = await getTable("{{ id }}", selectTable, filter);
+            const records = await getTable("{{ id }}", selectTable, filter);
             const tableColumns = await getTableColumns("{{ id }}", selectTable);
 
-            for (const column of tableColumns)
-                tr.appendChild(tableHeaderWithMenu(column));
-
-            table.appendChild(tr);
-
-            for (const row of data["items"]) {
-                const tr = document.createElement("tr");
-                for (const column of tableColumns)
-                    tr.appendChild(tableCellEditable(column, row[column["Name"]]));
-                table.appendChild(tr);
-            }
-
-            TABLE_EDITOR.appendChild(table);
+            TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
 
             document.getElementById("table_" + selectTable).classList.add("selected");
             

@@ -213,6 +213,7 @@ class Pops {
     }
 
     async output(info, title = "Output"){
+        const table = generateTable(info["records"], info["header"]);
         const output = await POP.custom([
             {
                 "Element": "span",
@@ -220,7 +221,7 @@ class Pops {
             },
             {
                 "Element": "div",
-                "InnerHTML": new XMLSerializer().serializeToString(JSONtoTable(info)),
+                "InnerHTML": new XMLSerializer().serializeToString(table),
                 "Attributes":{
                     "Class": "table-editor",
                     "Style": "margin-top: 16px;"
@@ -244,7 +245,7 @@ class Pops {
         ]);
         if (parseInt(output["Return"]) == 1){
             const downloadFile = document.createElement("a");
-            downloadFile.href = "data:attachment/text," + encodeURI(JSONtoCSV(info));
+            downloadFile.href = "data:attachment/text," + encodeURI(tableToCSV(table));
             downloadFile.target = "_blank";
             downloadFile.download = ID + "_output.csv";
             downloadFile.click();

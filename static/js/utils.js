@@ -21,7 +21,7 @@
  * make it easy to generate interactive tables and forms.
  */
 
-function appendOption(innerText, value, select, selectedValue = ""){
+function appendOptionToSelect(innerText, value, select, selectedValue = ""){
     const option = document.createElement("option");
     option.innerText = innerText;
 
@@ -32,21 +32,40 @@ function appendOption(innerText, value, select, selectedValue = ""){
     select.append(option);
 }
 
-function tableHeaderWithMenu(column){
-    const th = document.createElement("th");
-    th.id = "button_" + column["Name"];
-    th.setAttribute("entry-type", column["Type"]);
-    th.setAttribute("entry-pk", column["PK"]);
-    th.innerText = column["Name"];
-    return th;
+function generateTableHeader(columns){
+    const tr = document.createElement("tr");
+    for (const column of columns) {
+        const th = document.createElement("th");
+        th.id = "button_" + column["Name"];
+        th.setAttribute("entry-type", column["Type"]);
+        th.setAttribute("entry-pk", column["PK"]);
+        th.innerText = column["Name"];
+        tr.append(th);
+    }
+    return tr;
 }
 
-function tableCellEditable(column, value){
+function generateTableRecord(column, value){
     const td = document.createElement("td");
     td.setAttribute("entry-pk", column["PK"]);
     td.setAttribute("column", column["Name"]);
     td.innerText = value;
     return td;
+}
+
+function generateTable(records, columns){
+    const table = document.createElement("table");
+
+    table.appendChild(generateTableHeader(columns));
+
+    for (const record of records) {
+        const tr = document.createElement("tr");
+        for (const column of columns)
+            tr.appendChild(generateTableRecord(column, record[column["Name"]]));
+        table.appendChild(tr);
+    }
+
+    return table;
 }
 
 function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _delete = true){
@@ -99,7 +118,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
 
     for (const key in options)
         for (const opt in options[key])
-            appendOption(opt, options[key][opt], eval(key),
+            appendOptionToSelect(opt, options[key][opt], eval(key),
                 (key == "columnType") ? type :
                 (key == "columnPrimaryKey") ? constraint : _null
             )
@@ -152,7 +171,7 @@ function addRowField(column){
     else 
         checkbox.setAttribute("checked", true);
 
-    switch(column["Type"]){
+    switch(column["Type"].toUpperCase()){
         case "INTEGER":
         case "REAL":
         case "NUMBER":
@@ -168,11 +187,18 @@ function addRowField(column){
         case "LONGVARCHAR":
             listOfTd = [checkbox, span, textarea];
             break;
+        case "BOOL":
         case "BOOLEAN":
             for (const booleanOption of BOOLEAN_OPTIONS)
-                appendOption(booleanOption, booleanOption, select);
+                appendOptionToSelect(booleanOption, booleanOption, select);
             listOfTd = [checkbox, span, select];
             break;
+        case "BLOB":
+            checkbox.removeAttribute("checked");
+            checkbox.setAttribute("disabled", "disabled");
+            span.setAttribute("disabled", "disabled");
+            input.setAttribute("disabled", "disabled");
+            input.title = "Can't handle binary data";
         default:
             input.setAttribute("type", "text");
             break;
