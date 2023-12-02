@@ -1,0 +1,43 @@
+{% extends 'dialogues/base.html' %}
+{% block dialogue %}
+<table id="row-list"></table>
+<button class="primary" onclick="insertRow()">Insert</button>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
+<script>
+    const rowList = document.getElementById("row-list");
+
+    async function generateList(){
+        const columnList = await getTableColumns("{{ id }}", "{{ table }}");
+        for (const column of columnList) {
+            rowList.append(addRowField(column));
+        }
+    }
+
+    async function insertRow(){
+        let queryColumns = [];
+        let queryFields = [];
+        let queryValues = [];
+        for (const tr of rowList.querySelectorAll("tr")) {
+            if (!tr.querySelector("[type2='checkbox']").checked)
+                continue;
+            const column = tr.querySelector("span").innerText;
+            const value = tr.querySelector("[type2='input']").value;
+            queryColumns.push(column);
+            queryFields.push("?");
+            queryValues.push(value);
+        }
+        const data = await simpleQuery("{{ id }}", `insert into {{ table }}(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+        try{
+            if (data["response"] == "Error")
+                parent.POP.alert("Error:\n" + data["why"]);
+            else
+                parent.POP.alert("Item inserted");
+            parent.select("{{ table }}");
+        }catch{}
+    }
+    
+    generateList();
+</script>
+
+{% endblock %}

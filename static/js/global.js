@@ -16,11 +16,11 @@
 
 */
 
-const validName = /^[a-zA-Z0-9_]{1,50}$/g;
+const VALID_NAME = /^[a-zA-Z0-9_]{1,50}$/g;
 
 function isValid(string){
-    validName.lastIndex = 0;
-    return validName.test(string);
+    VALID_NAME.lastIndex = 0;
+    return VALID_NAME.test(string);
 }
 
 function checkErrors(res, showAlert = true) {
@@ -67,13 +67,19 @@ async function SQLQuery(database, query) {
     return resJSON;
 }
 
-async function insertTable(database, tableName){
-    const res = await SQLQuery(database, "CREATE TABLE " + tableName + "( id INTEGER PRIMARY KEY AUTOINCREMENT )");
-    if (checkErrors(res)){
-        return tableName;
-    } else {
-        return null;
-    }
+async function simpleQuery(database, query, values = []) {
+    let simpleQuery = {};
+    simpleQuery["query"] = query;
+    simpleQuery["values"] = values;
+    const res = await fetch("/simplequery/" + database, {
+        method: "POST",
+        body: JSON.stringify({
+            "info": simpleQuery,
+        }),
+        headers: {"Content-type": "application/json; charset=UTF-8"}
+    });
+    const resJSON = await res.json();
+    return resJSON;
 }
 
 async function deleteTable(database, tableName){
@@ -82,51 +88,6 @@ async function deleteTable(database, tableName){
         return tableName;
     } else {
         return null;
-    }
-}
-
-async function insertColumn(database, tableName, colName) {
-    const res = await SQLQuery(database, "ALTER TABLE " + tableName + " ADD " + colName + " TEXT;");
-    if (checkErrors(res)){
-        return colName;
-    } else {
-        return null;
-    }
-}
-
-async function deleteColumn(database, tableName, colName) {
-    const res = await SQLQuery(database, "ALTER TABLE " + tableName + " DROP " + colName);
-    if (checkErrors(res)){
-        return colName;
-    } else {
-        return null;
-    }
-}
-
-async function renameColumn(database, tableName, colName, newName) {
-    const res = await SQLQuery(database, "ALTER TABLE " + tableName + " RENAME COLUMN " + colName + " TO " + newName);
-    if(checkErrors(res)){
-        return newName;
-    } else {
-        return null;
-    }
-}
-
-async function insertRow(database, tableName) {
-    const res = await SQLQuery(database, "INSERT INTO " + tableName + " DEFAULT VALUES");
-    if(checkErrors(res)){
-        return tableName;
-    } else {
-        return null;
-    }
-}
-
-async function editCell(database, tableName, colName, idCol, id, newValue) {
-    const res = await SQLQuery(database, "UPDATE " + tableName + " SET " + colName + " = '" + newValue + "' WHERE " + idCol + " = " + id);
-    if(checkErrors(res)){
-        return true;
-    } else {
-        return false;
     }
 }
 
@@ -162,37 +123,28 @@ async function updateConfig(context, data, database = ""){
     return resJSON;
 }
 
-function JSONtoTable(json){
-    const table = document.createElement("table");
-    const trhead = document.createElement("tr");
-    for (const col in json["header"]){
-        const th = document.createElement("th");
-        th.innerText = json["header"][col];
-        trhead.appendChild(th)
-    }
-    table.append(trhead);
-
-    for (const row of json["rows"]) {
-        const tr = document.createElement("tr");
-        for (const col in json["header"]){
-            const td = document.createElement("td");
-            td.innerText = row[json["header"][col]];
-            tr.appendChild(td)
-        }
-        table.appendChild(tr);
-    }
-    return table;
-}
-
-function JSONtoCSV(json){
+function tableToCSV(table){
     csv = "";
-    for (const col in json["header"])
-        csv += "\"" + json["header"][col] + "\",";
-    csv += "\n";
-    for (const row of json["rows"]) {
-        for (const col in json["header"])
-            csv += "\"" + row[json["header"][col]] + "\",";
+    for (const tr of table.querySelectorAll("tr")){
+        for (const td of tr.querySelectorAll("th, td"))
+            csv += `"${td.innerText}",`
         csv += "\n";
     }
     return csv;
+}
+
+async function getTableColumns(database, tableName){
+    const tableInfo = await SQLQuery(database, `pragma table_info('${tableName}')`)
+    const sequence = await SQLQuery(database, `select * from sqlite_sequence where name='${tableName}'`);
+    let columns = []
+    for (const x in tableInfo["output"]["records"]){
+        let columnInfo = {}
+        columnInfo["Name"] = tableInfo["output"]["records"][x]["name"];
+        columnInfo["Type"] = tableInfo["output"]["records"][x]["type"];
+        columnInfo["PK"] = tableInfo["output"]["records"][x]["pk"];
+        if (columnInfo["PK"] != 0 && sequence["output"]["records"].length > 0)
+            columnInfo["Sequence"] = sequence["output"]["records"][0]["seq"];
+        columns.push(columnInfo);
+    }
+    return columns;
 }

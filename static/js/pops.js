@@ -184,4 +184,72 @@ class Pops {
     async alert(message = "", acceptText = "OK",  theme = this.DEFAULT_POPS_THEME) {
         return await this.choice(message, [acceptText], theme);
     }
+
+
+    async iframe(title, src, w, h){
+        return await this.custom([
+            {
+                "Element": "p",
+                "InnerText": title
+            },
+            {
+                "Element": "iframe",
+                "Attributes": {
+                    "Src": src,
+                    "Width": w,
+                    "Height": h,
+                    "frameborder": "0"
+                }
+            },
+            {
+                "Element": "button",
+                "InnerText": "X",
+                "Attributes": {
+                    "Return": 0,
+                    "Style": "position: absolute; top: 0; right: 0; min-width: auto;"
+                }
+            }
+        ])
+    }
+
+    async output(info, title = "Output"){
+        const table = generateTable(info["records"], info["header"]);
+        const output = await POP.custom([
+            {
+                "Element": "span",
+                "InnerText": title
+            },
+            {
+                "Element": "div",
+                "InnerHTML": new XMLSerializer().serializeToString(table),
+                "Attributes":{
+                    "Class": "table-editor",
+                    "Style": "margin-top: 16px;"
+                }
+            },
+            {
+                "Element": "button",
+                "InnerText": "X",
+                "Attributes": {
+                    "Return": 0,
+                    "Style": "position: absolute; top: 0; right: 0; min-width: auto;"
+                }
+            },
+            {
+                "Element": "button", 
+                "InnerText": "Export to CSV",
+                "Attributes": {
+                    "Return": 1,
+                }
+            }
+        ]);
+        if (parseInt(output["Return"]) == 1){
+            const downloadFile = document.createElement("a");
+            downloadFile.href = "data:attachment/text," + encodeURI(tableToCSV(table));
+            downloadFile.target = "_blank";
+            downloadFile.download = ID + "_output.csv";
+            downloadFile.click();
+        }
+        return output;
+    }
 }

@@ -1,0 +1,36 @@
+{% extends 'dialogues/base.html' %}
+{% block dialogue %}
+<div id="column-list"></div>
+<button class="primary" onclick="addColumn()">Add column</button>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
+<script>
+    const columnList = document.getElementById("column-list");
+
+    async function addColumn(){
+        const columnData = columnList.querySelector("div");
+        const name = columnData.querySelectorAll("input")[0].value;
+        const type = columnData.querySelectorAll("select")[0].value;
+        const constraint = columnData.querySelectorAll("select")[1].value;
+        const _null = columnData.querySelectorAll("select")[2].value;
+        const _default = columnData.querySelectorAll("input")[1].value;
+        
+        if (!name){
+            parent.POP.alert("Enter a name first");
+            return;
+        }
+
+        const data = await SQLQuery("{{ id }}", `alter table {{ table }} add column ${name} ${type} ${constraint} ${_null} ${_default};`);
+
+        try{
+            if (data["response"] == "Error")
+                parent.POP.alert("Error:\n" + data["why"]);
+            else
+                parent.POP.alert("Column added");
+            parent.select(parent.currentTable);
+        }catch{}
+    }
+
+    columnList.append(addColumnField("", "", "", "", false))
+</script>
+{% endblock %}

@@ -19,9 +19,10 @@
         <i class="fa fa-caret-down"></i>
     </button>
     <div id="table-dropdown" class="dropdown-content">
-        <a href="#" id="navbar-add-column" onclick="SQLWindow('Add column', `alter table ${currentTable} add `, false, true, false)">Add Column</a>
-        <a href="#" id="navbar-add-row" onclick="SQLWindow('Add row', `insert into ${currentTable} () values ()`,false, true, false)">Add Row</a>
+        <a href="#" id="navbar-add-column" onclick="addColumnDialog()">Add Column</a>
+        <a href="#" id="navbar-add-row" onclick="addRecordDialog()">Add Record</a>
         <hr>
+        <a href="#" onclick="displayTableDescription()">Table description</a>
         <a href="#" onclick="if(someTableIsSelected()){window.open('/json/table/{{ id }}/' + currentTable, '_blank')}">Check JSON table</a>
         <a href="#" onclick="deleteTableDialog(currentTable)">Delete Table</a>
     </div>
@@ -56,12 +57,13 @@
 </div>
 
 <script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
 <script src="/static/js/addons.js"></script>
 {% for addon in addons["edit"] %}
 <script src="{{ addon }}"></script>
 {% endfor %}
 <script>
-    const POP = new Pops();
+    var POP = new Pops();
     const ID = "{{ id }}";
     const VERSION = "{{ ver }}";
     const TABLE_EDITOR = document.getElementById("table-editor");
@@ -77,39 +79,33 @@
     var idCol;
     var filter = "";
 
-    document.addEventListener("click", (e) => {
-
-        switch (e.target.getAttribute("type")) {
-            case "column-button":
-                COLUMN_MENU.style.visibility = "visible";
+    TABLE_EDITOR.addEventListener("click", (e) => {
+        COLUMN_MENU.style.visibility = "hidden";
+        switch(e.target.nodeName.toLowerCase()){
+            case "th":
+                displayColMenu(e.target.innerText);
                 break;
-            case "cell-button":
-                if (clickedElement) 
+            case "td":
+                if (clickedElement)
                     clickedElement.classList.remove("selected");
                 e.target.classList.add("selected");
                 clickedElement = e.target;
-            default:
-                COLUMN_MENU.style.visibility = "hidden";
-                break;
+                break;    
         }
     })
 
-    document.addEventListener("dblclick", (e) => {
-        switch (e.target.getAttribute("type")) {
-            case "cell-button":
+    TABLE_EDITOR.addEventListener("dblclick", (e) => {
+        switch (e.target.nodeName.toLowerCase()) {
+            case "td":
                 const colName = e.target.getAttribute("column");
-                const id = e.target.parentElement.parentElement.getElementsByClassName("cell-button--id")[0].innerHTML;
-                SQLWindow("Edit cell", `update ${currentTable} set ${colName} = "${e.target.innerHTML}" where ${idCol} = ${id}`, false , true, false);
-                break;
-            default:
+                editRecordDialog(getRowPrimaryKey(e.target));
                 break;
         }
     })
 
     async function refreshDatabaseName(){
         databaseName = await getInfo(ID, "display_name");
-        DATABASE_TITLE.innerText = databaseName;
-        
+        DATABASE_TITLE.innerText = databaseName;  
     }
 
     async function preferences(){
@@ -203,48 +199,11 @@
         ])
         if (parseInt(query["Return"]) == 0){
             const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
+            if (res["response"] == "Error")
+                await POP.alert("ERROR \n" + res["why"]);
             if (showOutput)
-                try {
-                    const output = await POP.custom([
-                        {
-                            "Element": "span",
-                            "InnerText": "Output"
-                        },
-                        {
-                            "Element": "div",
-                            "InnerHTML": new XMLSerializer().serializeToString(JSONtoTable(res["output"])),
-                            "Attributes":{
-                                "Class": "table-editor",
-                                "Style": "margin-top: 16px;"
-                            }
-                        },
-                        {
-                            "Element": "button",
-                            "InnerText": "X",
-                            "Attributes": {
-                                "Return": 0,
-                                "Style": "position: absolute; top: 0; right: 0; min-width: auto;"
-                            }
-                        },
-                        {
-                            "Element": "button", 
-                            "InnerText": "Export to CSV",
-                            "Attributes": {
-                                "Return": 1,
-                            }
-                        }
-                    ]);
-                    if (parseInt(output["Return"]) == 1){
-                        const downloadFile = document.createElement("a");
-                        downloadFile.href = "data:attachment/text," + encodeURI(JSONtoCSV(res["output"]));
-                        downloadFile.target = "_blank";
-                        downloadFile.download = ID + "_output.csv";
-                        downloadFile.click();
-                    }
-                } catch (error) {
-                    if (res["response"] == "Error")
-                        await POP.alert("ERROR \n" + res["why"]);
-                }
+                await POP.output(res["output"]);
+
             if (update)
                 select(currentTable);
             if (loop)
@@ -271,37 +230,16 @@
         const table = document.createElement("table");
         const tr = document.createElement("tr");
         TABLE_EDITOR.innerHTML = "";
+        COLUMN_MENU.style.visibility = "hidden";
 
         for (const table of TABLE_LIST.getElementsByTagName("button")) 
                 table.classList.remove("selected");
 
         try {
-            const data = await getTable("{{ id }}", selectTable, filter);
-            idCol = await getTableConfig(ID, tableName, "id_col");
+            const records = await getTable("{{ id }}", selectTable, filter);
+            const tableColumns = await getTableColumns("{{ id }}", selectTable);
 
-            for (const header of data["columns_names"]) {
-                const th = document.createElement("th");
-                th.innerHTML = "<button class='column-button' type='column-button' id='button_" + header + "' entry-type='" + data["columns_types"][header] + "' onclick='displayColMenu(\"" + header + "\")'>" + header + "</button>";
-                tr.appendChild(th);
-            }
-
-            table.appendChild(tr);
-
-            for (const row of data["items"]) {
-                const tr = document.createElement("tr");
-                for (const cell of data["columns_names"]) {
-                    const td = document.createElement("td");
-                    if (cell == data["table_config"]["id_col"])
-                        td.innerHTML = "<button class='cell-button--id' type='cell-button' column='" + cell + "'>" + row[cell] + "</button>";
-                    else
-                        td.innerHTML = "<button class='cell-button' type='cell-button' column='" + cell + "'>" + row[cell] + "</button>";
-
-                    tr.appendChild(td);
-                }
-                table.appendChild(tr);
-            }
-
-            TABLE_EDITOR.appendChild(table);
+            TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
 
             document.getElementById("table_" + selectTable).classList.add("selected");
             
@@ -332,20 +270,42 @@
     }
 
     async function insertTableDialog(){
-        const tableName = await POP.prompt("Enter table name:");
-        if(tableName && isValid(tableName)){
-            if (await insertTable("{{ id }}", tableName)){
-                addToTableList(tableName);
-            }
-        } else if (tableName) {
-            await POP.alert("Insert a valid name");
+        await POP.iframe("Create table in " + databaseName, "/dialogue/createTable/{{ id }}", "900px", "400px");
+    }
+
+    async function addColumnDialog(){
+        if (!someTableIsSelected())
+            return;
+        await POP.iframe("Add column in " + currentTable, "/dialogue/addColumn/{{ id }}/" + currentTable, "900px", "100px");
+    }
+
+    async function addRecordDialog(){
+        if (!someTableIsSelected())
+            return;
+        await POP.iframe("Add record into " + currentTable, "/dialogue/addRecord/{{ id }}/" + currentTable, "400px", "400px");
+    }
+
+    async function editRecordDialog(primaryKey){
+        if (!primaryKey){
+            await POP.alert("Can't edit this record, it doesn't have a primary key")
+            return;
+        }
+        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px");
+    }
+
+    function getRowPrimaryKey(td){
+        const tr = td.parentElement;
+        try{
+            return tr.querySelector("[entry-pk='1']").innerText;
+        }catch{
+            return undefined;
         }
     }
 
     async function deleteTableDialog(tableName){
-        if (!someTableIsSelected()){
+        if (!someTableIsSelected())
             return;
-        }
+        
         if (await POP.confirm("Are you sure you want to delete table \"" + tableName + "\"?")){
             if (await deleteTable("{{ id }}", tableName)){
                 document.getElementById("table_" + tableName).remove();
@@ -362,6 +322,14 @@
         const viewportOffset = columnButton.getBoundingClientRect();
         COLUMN_MENU.style.top = (viewportOffset.top + viewportOffset.height) + "px";
         COLUMN_MENU.style.left = viewportOffset.left + "px";
+        COLUMN_MENU.style.visibility = "visible";
+    }
+
+    async function displayTableDescription(){
+        if (!someTableIsSelected())
+            return;
+        const res = await SQLQuery("{{ id }}", `pragma table_info('${currentTable}')`);
+        await POP.output(res["output"], `pragma table_info('${currentTable}')`);
     }
 
     refreshTableList();
