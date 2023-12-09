@@ -249,3 +249,39 @@ body {
 .rclick-menu a:hover{
   background-color: rgba(0,0,0,0.2);
 }
+
+dialog{
+  font-family: var(--font);
+  background-color: var(--dialogue-bg);
+  color: var(--dialogue-fg);
+}
+
+dialog input, dialog select, dialog textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  margin-bottom: 6px;
+  font-family: var(--font);
+  border-radius: 0;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+dialog button {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0px;
+  background-color: var(--normal-bg-color);
+  color: var(--normal-fg-color);
+  font-family: var(--font);
+  min-width: 64px;
+  padding: 6px 12px 6px 12px;
+  margin: 6px;
+}
+
+dialog button:hover {
+  opacity: 0.8;
+}
+
+dialog .primary {
+  background-color: var(--primary-bg-color);
+  color: var(--primary-fg-color);
+}

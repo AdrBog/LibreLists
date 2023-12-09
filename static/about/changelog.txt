@@ -1,4 +1,8 @@
 CHANGELOG
+V 0.2.1
+	- New addon: keyboard.js to edit keyboard shortcuts in Libre Lists
+	- Implementation of the <dialog> tag for popup handling
+	- Improved the SQL Window, now you can use tabs without losing the textarea focus.
 V 0.2.0
 	- Added new dialog windows to ease database creation and manipulation
 	- Improved and optimized program logic

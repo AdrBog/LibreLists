@@ -35,7 +35,7 @@ class Pops {
      * @returns
      */
     custom(elements = [], theme = this.DEFAULT_POPS_THEME){
-        const div = document.createElement("div");
+        const dialog = document.createElement("dialog");
 
         for (const i of elements) {
             let input;
@@ -54,22 +54,22 @@ class Pops {
             for (const [attribute, value] of Object.entries(i["Attributes"])) 
                 input.setAttribute(attribute, value);
 
-            div.append(input);
+            dialog.append(input);
         }
 
-        div.classList.add("pops-body", theme);
-        this.body.appendChild(div);
+        this.body.appendChild(dialog);
+        dialog.showModal()
 
         return new Promise(
             (resolve) => {
-                for (const button of div.querySelectorAll("[return]")) {
+                for (const button of dialog.querySelectorAll("[return]")) {
                     button.addEventListener("click", (e) => {
                         const r = {};
                         
-                        for (const input of div.querySelectorAll("input, select, textarea"))
+                        for (const input of dialog.querySelectorAll("input, select, textarea"))
                             r[input.getAttribute("Property")] = input.value;
 
-                        div.remove();
+                        dialog.remove();
                         resolve({
                             "Return": e.target.getAttribute("Return"),
                             "Properties": r

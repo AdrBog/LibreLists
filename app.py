@@ -2,7 +2,6 @@ import os, shutil, sqlite3, json, re
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import abort
-import base64
 
 
 app = Flask(__name__)
@@ -14,7 +13,7 @@ ADDONS_FILE = "addons.json"
 TABLE_CONFIG_FILE = "tables.json"
 INFO_FILE = "info.json"
 TABLE_DEFAULT_CONFIG = {}
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 # FUNCTIONS
 
@@ -26,30 +25,6 @@ def get_db_connection(id):
     conn = sqlite3.connect(f'{PROJECT_DIR}/{id}/{id}.db')
     conn.row_factory = sqlite3.Row
     return conn
-
-def get_item(id, table, item_id):
-    conn = get_db_connection(id)
-    item = conn.execute(f'SELECT * FROM {table} WHERE id = ?',
-                        (item_id,)).fetchone()
-    conn.close()
-    if item is None:
-        abort(404)
-    return item
-
-def get_columns_names(id, table):
-    conn = get_db_connection(id)
-    cursor = conn.execute(f'SELECT * FROM {table}')
-    columnNames = list(map(lambda x: x[0], cursor.description))
-    conn.close()
-    return columnNames
-
-def get_columns_types(id, table):
-    conn = get_db_connection(id)
-    columnsQuery = conn.execute(f"pragma table_info('{table}')")
-    columnInfos = columnsQuery.fetchall()
-    columnTypes = [item[2] for item in columnInfos]
-    conn.close()
-    return columnTypes
 
 # ROUTES
 
