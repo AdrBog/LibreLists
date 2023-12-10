@@ -15,6 +15,9 @@ Columns:
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 <script src="/static/js/pops.js"></script>
+{% for addon in addons["createTable"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
 <script>
     const columnList = document.getElementById("column-list");
 

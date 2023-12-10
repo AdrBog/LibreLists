@@ -94,7 +94,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
             "AUTOINCREMENT": "AUTOINCREMENT"
         }
     };
-    const datalist = ["DEFAULT CURRENT_TIMESTAMP", "DEFAULT (DATE('NOW'))", "CHECK (X = 0 or X = 1)"];
+    const datalist = ["DEFAULT CURRENT_TIMESTAMP", "DEFAULT (DATE('NOW'))", "CHECK (X IN ('A', 'B'))"];
     const div = document.createElement("div");
     const columnName = document.createElement("input");
     const columnType = document.createElement("select");
@@ -162,6 +162,9 @@ function addRowField(column){
     input.setAttribute("type2", "input");
     select.setAttribute("type2", "input");
     textarea.setAttribute("type2", "input");
+    input.setAttribute("column", column["Name"]);
+    select.setAttribute("column", column["Name"]);
+    textarea.setAttribute("column", column["Name"]);
 
     span.style.minWidth = "100px";
     span.innerText = column["Name"];

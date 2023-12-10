@@ -4,6 +4,9 @@
 <button class="primary" onclick="addColumn()">Add column</button>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
+{% for addon in addons["addColumn"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
 <script>
     const columnList = document.getElementById("column-list");
 

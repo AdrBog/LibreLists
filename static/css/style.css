@@ -152,14 +152,16 @@ body {
   font-size: 30px;
 }
 
+.unselectable * {
+  user-select: none;
+}
+
 .table-editor{
   min-width: 75%;
   overflow: scroll;
   background-color: white;
   border: 1px solid rgba(0,0,0,0.2);
-  user-select: none;
 }
-
 
 .table-editor table {
   border-collapse: collapse;

@@ -5,6 +5,9 @@
 <button onclick="deleteRecord()">Delete record</button>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
+{% for addon in addons["editRecord"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
 <script>
     const rowList = document.getElementById("row-list");
     let primaryKeyColumn;
@@ -23,6 +26,8 @@
             const column = tr.querySelector("span").innerText;
             input.value = item[column];
         }
+
+        document.dispatchEvent(new CustomEvent("generation-done"));
     }
 
     async function updateRecord(){
@@ -72,5 +77,4 @@
     
     generateList();
 </script>
-
 {% endblock %}

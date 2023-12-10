@@ -4,6 +4,9 @@
 <button class="primary" onclick="insertRow()">Insert</button>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
+{% for addon in addons["addRecord"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
 <script>
     const rowList = document.getElementById("row-list");
 
@@ -12,6 +15,7 @@
         for (const column of columnList) {
             rowList.append(addRowField(column));
         }
+        document.dispatchEvent(new CustomEvent("generation-done"))
     }
 
     async function insertRow(){

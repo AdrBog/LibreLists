@@ -5,5 +5,11 @@
     "edit": [
         "/static/addons/SQLFilters.js",
         "/static/addons/keyboard.js"
+    ],
+    "editRecord": [
+        "/static/addons/choices.js"
+    ],
+    "addRecord": [
+        "/static/addons/choices.js"
     ]
 }

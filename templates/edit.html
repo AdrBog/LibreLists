@@ -53,7 +53,7 @@
     <hr>
     <div id="table-list-buttons"></div>
 </div>
-<div id="table-editor" class="table-editor">
+<div id="table-editor" class="table-editor unselectable">
 </div>
 
 <script src="/static/js/global.js"></script>
@@ -201,7 +201,7 @@
             const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
             if (res["response"] == "Error")
                 await POP.alert("ERROR \n" + res["why"]);
-            if (showOutput)
+            else if (showOutput)
                 await POP.output(res["output"]);
 
             if (update)
