@@ -7,7 +7,7 @@ These functions will also help you when creating addons for Libre Lists
 It is located in static/js/global.js
 
 ## Constants
-### validName
+### VALID_NAME
 
 This constant is a regex that is used to check if a string is valid, this includes:
 
@@ -16,7 +16,7 @@ This constant is a regex that is used to check if a string is valid, this includ
 
 This is the regex:
 ```js
-const validName = /^[a-zA-Z0-9_]{1,50}$/g;
+const VALID_NAME = /^[a-zA-Z0-9_]{1,50}$/g;
 ```
 
 ## Functions
@@ -52,23 +52,6 @@ const res = await SQLQuery("foo", "ALTER TABLE bar DROP column");
 if (res["response"] == "Error"){
     console.log(res["why"]);
 } 
-```
-
-### checkErrors(res, showAlert)
-It returns true or false depending of the response JSON that you enter. It also shows an alert window in case of false return.
-
-Example:
-```js
-const res = await SQLQuery("foo", "SELECT * FROM table");
-if (checkErrors(res)){
-    // The SQL Query worked
-} else {
-    // The SQL Query failed
-}
-```
-If you don't want to display error message in case of error, add this:
-```js
-checkErrors(res, false)
 ```
 
 ### getConfig(attributeName)
@@ -116,18 +99,6 @@ const data = await getTable("foo", "bar");
 const data = await getTable("foo", "bar", "Name LIKE 'Jhon.*'");
 ```
 
-### insertTable(database, tableName)
-This function creates a new table in your database. Returns *tableName* if successful, in case of error it returns *null*
-
-Example:
-```js
-if (await insertTable("foo", "bar")){
-    // Table created
-} else {
-    // Error ocurred
-}
-```
-
 ### deleteTable(database, tableName)
 This function deletes a table from a database. Returns *tableName* if successful, in case of error it returns *null*
 
@@ -135,66 +106,6 @@ Example:
 ```js
 if (await deleteTable("foo", "bar")){
     // Table deleted
-} else {
-    // Error ocurred
-}
-```
-
-### insertColumn(database, tableName, colName)
-This function creates a new column in your table. Returns *colName* if successful, in case of error it returns *null*
-
-Example:
-```js
-if (await insertColumn("foo", "bar", "col")){
-    // Column created
-} else {
-    // Error ocurred
-}
-```
-
-### deleteColumn(database, tableName, colName)
-This functions deletes a column from a table. Returns *colName* if successful, in case of error it returns *null*
-
-Example:
-```js
-if (await deleteColumn("foo", "bar", "col")){
-    // Column created
-} else {
-    // Error ocurred
-}
-```
-
-### renameColumn(database, tableName, colName, newName)
-This function change the name of a column from a table. Returns *newName* if successful, in case of error it returns *null*
-
-Example:
-```js
-if (await renameColumn("foo", "bar", "col", "ham")){
-    // Column renamed
-} else {
-    // Error ocurred
-}
-```
-
-### insertRow(database, tableName)
-This function inserts an empty row in your table. Returns *tableName* if successful, in case of error it returns *null*
-
-Example:
-```js
-if (await insertRow("foo", "bar")){
-    // Row created
-} else {
-    // Error ocurred
-}
-```
-
-### editCell(database, tableName, colName, idCol, id, newValue)
-This function will edit a cell from you table, you need to specify the column, and the id of the item you want to change, also specify which column work as id. This returns true or false depending of if it worked.
-
-Example:
-```js
-if (await editCell("foo", "bar", "col", "id", 0, "eggs")){
-    // Cell edited
 } else {
     // Error ocurred
 }

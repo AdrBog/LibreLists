@@ -14,7 +14,6 @@ async function createOptions(){
     let datalists = [];
     if (!matches)
         return;
-        console.log(matches)
     for (const match of matches)
         datalists.push(extractMatches(match))
     addDatalists(datalists);

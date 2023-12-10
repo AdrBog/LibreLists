@@ -32,7 +32,7 @@
         <i class="fa fa-caret-down"></i>
     </button>
     <div id="database-dropdown" class="dropdown-content">
-        <a href="#" onclick="SQLWindow('SQL Window', '', true, true)">SQL Window</a>
+        <a href="#" onclick="SQLiteLoop()">SQL Window</a>
     </div>
 </div>
 {% endblock %}
@@ -42,9 +42,9 @@
     <span id="column-menu-name" style="padding-bottom: 0px; font-weight: bold;"><b>Name</b></span>
     <span id="column-menu-type" style="font-size: 12px;">Type</span>
     <hr>
-    <a href="#" onclick="SQLWindow('Rename Column', `alter table ${currentTable}\nrename column ${selectedColumn} to `, false, true, false)">Rename Column</a>
+    <a href="#" onclick="SQLiteOnce('Rename Column', `alter table ${currentTable}\nrename column ${selectedColumn} to `)">Rename Column</a>
     <hr>
-    <a href="#" onclick="SQLWindow('Rename Column', `alter table ${currentTable}\ndrop column ${selectedColumn}`, false, true, false)" style="color: red;">Delete Column</a>
+    <a href="#" onclick="SQLiteOnce('Delete Column', `alter table ${currentTable}\ndrop column ${selectedColumn}`)" style="color: red;">Delete Column</a>
 </div>
 
 <div id="table-list" class="table-list">
@@ -157,58 +157,26 @@
         }
     }
 
-    async function SQLWindow(title = "SQL Window", _default = "", loop = false, update = false, showOutput = true){
-        const query = await POP.custom([
-            {
-                "Element": "span",
-                "InnerText": title
-            },
-            {
-                "Element": "br",
-            },
-            {
-                "Element": "textarea",
-                "InnerHTML": _default,
-                "Attributes": {
-                    "Cols": "50",
-                    "Rows": "10",
-                    "Placeholder": "Enter your SQL query here",
-                    "Spellcheck": "false",
-                    "Property": "Query",
-                    "Style": "font-size: 20px;"
-                }
-            },
-            {
-                "Element": "br",
-            },
-            {
-                "Element": "button", 
-                "InnerText": "Execute",
-                "Attributes": {
-                    "Return": 0,
-                    "Class": "primary"
-                }
-            },
-            {
-                "Element": "button", 
-                "InnerText": "Cancel",
-                "Attributes": {
-                    "Return": 1,
-                }
-            }
-        ])
+    async function SQLiteLoop(title = "SQL Window", _default = ""){
+        const query = await POP.sqlwindow(title, _default);
         if (parseInt(query["Return"]) == 0){
             const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
             if (res["response"] == "Error")
                 await POP.alert("ERROR \n" + res["why"]);
-            else if (showOutput)
+            else
                 await POP.output(res["output"]);
+            select(currentTable);
+            SQLiteLoop(title, query["Properties"]["Query"]);
+        }
+    }
 
-            if (update)
-                select(currentTable);
-            if (loop)
-                SQLWindow(title, query["Properties"]["Query"], loop);
-            
+    async function SQLiteOnce(title = "", _default = ""){
+        const query = await POP.sqlwindow(title, _default);
+        if (parseInt(query["Return"]) == 0){
+            const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
+            if (res["response"] == "Error")
+                await POP.alert("ERROR \n" + res["why"]);
+            select(currentTable);
         }
     }
 

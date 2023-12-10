@@ -23,17 +23,6 @@ function isValid(string){
     return VALID_NAME.test(string);
 }
 
-function checkErrors(res, showAlert = true) {
-    if (res["response"] == "Error"){
-        if (showAlert){
-            alert("An error ocurred:\n" + res["why"]);
-        }
-        return false;
-    } else {
-        return true;
-    }
-}
-
 async function getJSONDatabase(database) {
     const res = await fetch("/json/database/" + database);
     const data = await res.json();
