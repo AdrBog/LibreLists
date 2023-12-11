@@ -69,7 +69,6 @@ function generateTable(records, columns){
 }
 
 function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _delete = true){
-            
     const options = {
         "columnType":{
             "TEXT": "TEXT",
@@ -159,12 +158,12 @@ function addRowField(column){
 
     checkbox.setAttribute("type", "checkbox");
     checkbox.setAttribute("type2", "checkbox");
-    input.setAttribute("type2", "input");
-    select.setAttribute("type2", "input");
-    textarea.setAttribute("type2", "input");
-    input.setAttribute("column", column["Name"]);
-    select.setAttribute("column", column["Name"]);
-    textarea.setAttribute("column", column["Name"]);
+    checkbox.setAttribute("name", column["Name"]);
+    for (const element of [input, select, textarea]) {
+        element.setAttribute("type2", "input");
+        element.setAttribute("column", column["Name"]);
+        element.setAttribute("name", column["Name"]);
+    }
 
     span.style.minWidth = "100px";
     span.innerText = column["Name"];

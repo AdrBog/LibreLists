@@ -250,7 +250,7 @@
     async function addRecordDialog(){
         if (!someTableIsSelected())
             return;
-        await POP.iframe("Add record into " + currentTable, "/dialogue/addRecord/{{ id }}/" + currentTable, "400px", "400px");
+        await POP.iframe("Add record into " + currentTable, "/dialogue/addRecord/{{ id }}/" + currentTable, "400px", "400px", "left");
     }
 
     async function editRecordDialog(primaryKey){
@@ -258,7 +258,7 @@
             await POP.alert("Can't edit this record, it doesn't have a primary key")
             return;
         }
-        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px");
+        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px", "left");
     }
 
     function getRowPrimaryKey(td){

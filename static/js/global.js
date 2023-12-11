@@ -73,7 +73,7 @@ async function simpleQuery(database, query, values = []) {
 
 async function deleteTable(database, tableName){
     const res = await SQLQuery(database, "DROP TABLE IF EXISTS " + tableName);
-    if (checkErrors(res)){
+    if (res["response"] == "OK"){
         return tableName;
     } else {
         return null;

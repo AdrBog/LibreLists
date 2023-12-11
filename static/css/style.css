@@ -287,3 +287,16 @@ dialog .primary {
   background-color: var(--primary-bg-color);
   color: var(--primary-fg-color);
 }
+
+dialog.left {
+  margin-right: 0;
+  height: 100%;
+  margin-top: 0;
+  box-sizing: content-box;
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.left iframe {
+  flex: 1;
+}

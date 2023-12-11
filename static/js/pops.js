@@ -57,6 +57,7 @@ class Pops {
             dialog.append(input);
         }
 
+        dialog.classList.add(theme)
         this.body.appendChild(dialog);
         dialog.showModal()
 
@@ -193,7 +194,7 @@ class Pops {
      * @param {*} h 
      * @returns 
      */
-    async iframe(title, src, w = "400px", h = "400px"){
+    async iframe(title, src, w = "400px", h = "400px", className = "center"){
         return await this.custom([
             {
                 "Element": "p",
@@ -216,7 +217,7 @@ class Pops {
                     "Style": "position: absolute; top: 0; right: 0; min-width: auto;"
                 }
             }
-        ])
+        ], className)
     }
 
     /**
@@ -306,7 +307,7 @@ class Pops {
         ]);
         if (parseInt(output["Return"]) == 1){
             const downloadFile = document.createElement("a");
-            downloadFile.href = "data:attachment/text," + encodeURI(tableToCSV(table));
+            downloadFile.href = "data:attachment/text," + encodeURIComponent(tableToCSV(table));
             downloadFile.target = "_blank";
             downloadFile.download = ID + "_output.csv";
             downloadFile.click();
