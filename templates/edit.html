@@ -58,7 +58,6 @@
 
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
-<script src="/static/js/addons.js"></script>
 {% for addon in addons["edit"] %}
 <script src="{{ addon }}"></script>
 {% endfor %}
@@ -73,6 +72,9 @@
     const DATABASE_TITLE = document.getElementById("database-title");
 
     var currentTable;
+    var currentTableInfo;
+    var currentTableCreateInfo;
+    var currentRecord;
     var selectedColumn;
     var clickedElement;
     var databaseName;
@@ -90,6 +92,7 @@
                     clickedElement.classList.remove("selected");
                 e.target.classList.add("selected");
                 clickedElement = e.target;
+                currentRecord = getRecordFromTd(e.target);
                 break;    
         }
     })
@@ -191,6 +194,7 @@
     function selectNone(){
         TABLE_EDITOR.innerHTML = "Select a table to start";
         currentTable = null;
+        currentTableInfo = null;
     }
 
     async function select(tableName) {
@@ -206,6 +210,8 @@
         try {
             const records = await getTable("{{ id }}", selectTable, filter);
             const tableColumns = await getTableColumns("{{ id }}", selectTable);
+            currentTableCreateInfo = await getTableCreationInfo("{{ id }}", selectTable);
+            currentTableInfo = tableColumns;
 
             TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
 
@@ -217,6 +223,7 @@
             TABLE_EDITOR.append(p);
         }
         currentTable = selectTable;
+        
         return currentTable;
     }
 
@@ -268,6 +275,14 @@
         }catch{
             return undefined;
         }
+    }
+
+    function getRecordFromTd(td){
+        const tr = td.parentElement;
+        const record = {};
+        for (const cell of tr.querySelectorAll("td"))
+            record[cell.getAttribute("column")] = cell.innerText;
+        return record;
     }
 
     async function deleteTableDialog(tableName){

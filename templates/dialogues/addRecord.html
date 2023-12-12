@@ -11,7 +11,7 @@
     const rowList = document.getElementById("row-list");
 
     async function generateList(){
-        const columnList = await getTableColumns("{{ id }}", "{{ table }}");
+        const columnList = parent.currentTableInfo;
         for (const column of columnList) {
             rowList.append(addRowField(column));
         }

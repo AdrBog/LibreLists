@@ -3,7 +3,6 @@
         "/static/addons/otherApps.js"
     ],
     "edit": [
-        "/static/addons/SQLFilters.js",
         "/static/addons/keyboard.js"
     ],
     "editRecord": [

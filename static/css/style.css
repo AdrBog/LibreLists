@@ -1,4 +1,4 @@
-@import url('themes/light.css');
+@import url('themes/dark.css');
 
 @font-face {
   font-family: 'aurulent-sans-mono';
@@ -16,6 +16,13 @@ body {
   height: 100%;
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg);
+  color: var(--fg);
+  scrollbar-color: var(--bg) var(--fg);
+}
+
+a{
+  color: var(--a);
 }
 
 .editor{
@@ -38,7 +45,7 @@ body {
 }
 
 .index-list__item:hover{
-  background-color: rgba(0,0,0,0.2);
+  background-color: var(--black-02);
 }
 
 .navbar a {
@@ -74,8 +81,7 @@ body {
 }
 
 .navbar a:hover, .dropdown:hover .dropbtn, .dropdown-content a:hover {
-  background-color: var(--toolbar-bg-hover);
-  color: var(--toolbar-fg-hover);
+  box-shadow: inset 0 0 100px 100px var(--white-02);
 }
 
 .dropdown-content {
@@ -94,23 +100,23 @@ body {
   text-align: left;
 }
 
-/* Show the dropdown menu on hover */
 .dropdown:hover .dropdown-content {
   display: block;
 }
 
 .primary{
-  background-color: var(--primary-bg-color);
-  color: var(--primary-fg-color);
+  background-color: var(--primary-bg);
+  color: var(--primary-fg);
 }
 
 .home{
-	background-color: var(--primary-bg-color) !important;
-  color: var(--primary-fg-color);
+	background-color: var(--primary-bg) !important;
+  color: var(--primary-fg);
 }
 
 .container{
-  background-color: #f3f2f1;
+  background-color: var(--bg);
+  color: var(--fg);
   flex: 1 1 auto;
   padding: 8px;
   gap: 8px;
@@ -139,13 +145,27 @@ body {
   overflow: scroll;
 }
 
-#table-list-buttons button{
-  border-color:rgba(0,0,0,0.2);
+button{
   border-radius: 0;
+  border: 1px solid var(--black-02);
+  background-color: var(--black-02);
+  color: var(--fg);
+}
+
+button:hover{
+  box-shadow: inset 0 0 100px 100px var(--white-05);
+}
+
+input, textarea, select{
+  font-family: var(--font);
+  background-color: var(--bg-2);
+  color: var(--fg-2);
 }
 
 .table-list button {
   width: 100%;
+  background-color: var(--bg);
+  color: var(--fg);
 }
 
 .table-list .database-title{
@@ -159,30 +179,41 @@ body {
 .table-editor{
   min-width: 75%;
   overflow: scroll;
-  background-color: white;
-  border: 1px solid rgba(0,0,0,0.2);
+  background-color: var(--bg-2);
+  color: var(--fg-2);
+  border: 1px solid var(--black-02);
 }
 
 .table-editor table {
   border-collapse: collapse;
+  background-color: var(--bg-2);
+  color: var(--fg-2);
 }
 
 .table-editor table td, .table-editor table th {
-  border: 1px solid #ddd;
+  border: 1px solid var(--ddd);
   margin: 0px;
   min-height: 120px;
   min-width: 120px;
 }
 
-.table-editor table tr:nth-child(even){background-color: #f2f2f2;}
+.table-editor table tr:nth-child(even){
+  box-shadow: inset 0 0 100px 100px var(--black-005);
+}
 
-.table-editor table tr:hover {background-color: #ddd;}
+
+.table-editor table tr:hover {
+  box-shadow: inset 0 0 100px 100px var(--black-01);
+}
 
 .table-editor table th {
+  font-size: 16px;
+  padding: 8px;
   text-align: left;
-  background-color: #04AA6D;
-  color: white;
+  background-color: var(--primary-bg);
+  color: var(--primary-fg);
   font-weight: normal;
+  border: 0;
 }
 
 .table-editor table td {
@@ -190,24 +221,8 @@ body {
   overflow-wrap: break-word;
 }
 
-.table-editor table td:hover{
-  background-color: rgba(0,0,0,0.1);
-}
-
-.table-editor table td.cell-button--id {
-  font-weight: bold;
-}
-
-.table-editor table th {
-  font-size: 16px;
-  padding: 8px;
-  text-align: left;
-  color: white;
-  border: 0;
-}
-
-.table-editor table th:hover {
-  background-color: #02884d;
+.table-editor table td:hover, .table-editor table th:hover{
+  box-shadow: inset 0 0 100px 100px var(--black-01);
 }
 
 [entry-pk]:not([entry-pk="0"]){
@@ -220,16 +235,17 @@ body {
 }
 
 .selected{
-  background-color: #9bf8bf !important;
+  box-shadow: inset 0 0 100px 100px var(--selected) !important;
 }
 
 .rclick-menu{
   position: absolute;
   display: flex;
   flex-direction: column;
-  background-color: #f9f9f9;
+  background-color: var(--bg);
+  color: var(--fg);
   min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  box-shadow: 0px 8px 16px 0px var(--black-02);
   z-index: 1;
 }
 
@@ -238,24 +254,21 @@ body {
   align-self: stretch;
 }
 
-.rclick-menu span{
-  padding: 8px;
-}
-
-.rclick-menu a{
+.rclick-menu span, .rclick-menu a{
   text-decoration: none;
-  color: black;
+  color: var(--fg);
   padding: 8px;
 }
 
 .rclick-menu a:hover{
-  background-color: rgba(0,0,0,0.2);
+  box-shadow: inset 0 0 100px 100px var(--black-02);
 }
 
 dialog{
   font-family: var(--font);
-  background-color: var(--dialogue-bg);
-  color: var(--dialogue-fg);
+  background-color: var(--bg);
+  color: var(--fg);
+  border-color: var(--000);
 }
 
 dialog input, dialog select, dialog textarea {
@@ -265,27 +278,23 @@ dialog input, dialog select, dialog textarea {
   margin-bottom: 6px;
   font-family: var(--font);
   border-radius: 0;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--black-02);
 }
 
 dialog button {
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--black-02);
   border-radius: 0px;
-  background-color: var(--normal-bg-color);
-  color: var(--normal-fg-color);
+  background-color: var(--black-02);
+  color: var(--fg);
   font-family: var(--font);
   min-width: 64px;
   padding: 6px 12px 6px 12px;
   margin: 6px;
 }
 
-dialog button:hover {
-  opacity: 0.8;
-}
-
 dialog .primary {
-  background-color: var(--primary-bg-color);
-  color: var(--primary-fg-color);
+  background-color: var(--primary-bg);
+  color: var(--primary-fg);
 }
 
 dialog.left {

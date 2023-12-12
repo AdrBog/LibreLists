@@ -13,7 +13,7 @@ ADDONS_FILE = "addons.json"
 TABLE_CONFIG_FILE = "tables.json"
 INFO_FILE = "info.json"
 TABLE_DEFAULT_CONFIG = {}
-VERSION = "0.2.2"
+VERSION = "0.3.0"
 
 # FUNCTIONS
 
