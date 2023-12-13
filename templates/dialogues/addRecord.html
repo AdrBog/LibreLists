@@ -27,11 +27,11 @@
                 continue;
             const column = tr.querySelector("span").innerText;
             const value = tr.querySelector("[type2='input']").value;
-            queryColumns.push(column);
+            queryColumns.push(`"${column}"`);
             queryFields.push("?");
             queryValues.push(value);
         }
-        const data = await simpleQuery("{{ id }}", `insert into {{ table }}(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+        const data = await simpleQuery("{{ id }}", `insert into "{{ table }}"(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
         try{
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);

@@ -23,7 +23,7 @@
             return;
         }
 
-        const data = await SQLQuery("{{ id }}", `alter table {{ table }} add column ${name} ${type} ${constraint} ${_null} ${_default};`);
+        const data = await SQLQuery("{{ id }}", `alter table "{{ table }}" add column "${name}" ${type} ${constraint} ${_null} ${_default};`);
 
         try{
             if (data["response"] == "Error")

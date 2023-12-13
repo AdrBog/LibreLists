@@ -3,7 +3,8 @@
         "/static/addons/otherApps.js"
     ],
     "edit": [
-        "/static/addons/keyboard.js"
+        "/static/addons/keyboard.js",
+        "/static/addons/fancyTables.js"
     ],
     "editRecord": [
         "/static/addons/choices.js"

@@ -40,14 +40,14 @@ Columns:
             const _default = key.querySelectorAll("input")[1].value;
             if (constraint == "PRIMARY KEY")
                 somePrimaryKey = true;
-            queryTables.push(`${column} ${type} ${constraint} ${_null} ${_default}`);
+            queryTables.push(`"${column}" ${type} ${constraint} ${_null} ${_default}`);
         }
 
         if (!somePrimaryKey)
             if (!await parent.POP.confirm("You have not created any column with primary key.\nThis will make editing cells more difficult.\nAre your sure you want to continue?"))
                 return;
 
-        query = `create table ${tableName} (${queryTables.join(",")})`;
+        query = `create table "${tableName}" (${queryTables.join(",")})`;
 
         const data = await simpleQuery("{{id}}", query);
         if (data["response"] == "Error")

@@ -48,6 +48,8 @@ function generateTableHeader(columns){
 function generateTableRecord(column, value){
     const td = document.createElement("td");
     td.setAttribute("entry-pk", column["PK"]);
+    td.setAttribute("entry-type", column["Type"]);
+    td.setAttribute("value", value);
     td.setAttribute("column", column["Name"]);
     td.innerText = value;
     return td;
@@ -125,7 +127,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     deleteButton.innerText = "X";
     deleteButton.setAttribute("delete", true);
 
-    columnName.title = "Column name, DON'T USE WHITESPACES, use _ if you want to separate words";
+    columnName.title = "Column name";
     columnType.title = "The type of information to be stored, note that SQLite does not usually check if the type of information is valid.";
     columnPrimaryKey.title = "Sets the PRIMARY KEY or UNIQUE contraint, this option does not usually work once the table is created.";
     columnNull.title = "Sets the NOT NULL or AUTOINCREMENT contraint, note that AUTOINCREMENT only works in INTEGER PRIMARY KEY";

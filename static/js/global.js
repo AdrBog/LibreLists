@@ -28,6 +28,10 @@ function isValid(string){
     return VALID_NAME.test(string);
 }
 
+function fancyText(string){
+    return string.charAt(0).toUpperCase() + string.slice(1).replace(/_/g, " ");
+}
+
 /**
  * Returns information about a database.
  * @param {*} database 
@@ -117,7 +121,7 @@ async function simpleQuery(database, query, values = []) {
  * THIS FUNCTION NEEDS TO BE EXECUTED
  */
 async function deleteTable(database, tableName){
-    const res = await SQLQuery(database, "DROP TABLE IF EXISTS " + tableName);
+    const res = await SQLQuery(database, `DROP TABLE IF EXISTS "${tableName}"`);
     if (res["response"] == "OK"){
         return tableName;
     } else {
@@ -155,7 +159,8 @@ async function getTableConfig(database, tableName, attributeName){
 }
 
 async function getTableCreationInfo(database, tableName){
-    const query = `select sql from sqlite_master where sql like "%create%${tableName} %" or sql like "%create%${tableName}(%"`;
+    //const query = `select sql from sqlite_master where sql like "%create%${tableName} %" or sql like "%create%${tableName}(%"`;
+    const query = `select sql from sqlite_master where sql like "%create%${tableName}_%"`;
     const res = await SQLQuery(database, query);
     return res["output"]["records"][0]["sql"];
 }
