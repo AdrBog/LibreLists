@@ -33,11 +33,15 @@ window.addEventListener("load", () => {
 
         th[entry-type="COLOR"]::before{content: "󰌁 ";}
 
-        th[entry-type="DATE"]::before{content: " ";}
+        th[entry-type="DATE"]::before, th[entry-type="WEEK"]::before{
+            content: " ";
+        }
 
         th[entry-type="BLOB"]::before{content: " ";}
 
         th[entry-type="TEXT"]::before{content: "󰦩 ";}
+
+        th[entry-type="EMAIL"]::before{content: " ";}
 
         th[entry-type="NUMBER"]::before, th[entry-type="INTEGER"]::before, th[entry-type="REAL"]::before{
             content: " ";

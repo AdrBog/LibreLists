@@ -189,7 +189,7 @@ input, textarea, select{
   color: var(--fg-2);
 }
 
-.table-editor table td, .table-editor table th {
+.table-editor table td {
   border: 1px solid var(--ddd);
   margin: 0px;
   min-height: 120px;
@@ -213,6 +213,11 @@ input, textarea, select{
   color: var(--primary-fg);
   font-weight: normal;
   border: 0;
+  white-space: nowrap;
+}
+
+.table-editor table th * {
+  display: inline;
 }
 
 .table-editor table td {

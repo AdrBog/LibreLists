@@ -1,0 +1,77 @@
+<!--
+    This template should not be used in Libre Lists itself.
+    But as an iframe in an external page, for example in Other Apps to create a quick form.
+    Needless to say, the page should be in your own local network.
+    Because outside the network would be an incredible security breach.
+ -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<table id="row-list"></table>
+<button id="submit-button" class="primary" onclick="">Submit</button>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
+<script>
+    const rowList = document.getElementById("row-list");
+    const submitButton = document.getElementById("submit-button");
+    let primaryKeyColumn, edit;
+
+    async function generateForm(tableInfo, record){
+        primaryKeyColumn = getPrimaryKeyColumn(tableInfo);
+
+        for (const column of tableInfo)
+            rowList.append(addRowField(column));
+        
+        for (const tr of rowList.querySelectorAll("tr")) {
+            const input = tr.querySelector("[type2='input']");
+            const column = tr.querySelector("span").innerText;
+            input.value = (record[column]) ? (record[column]) : "";
+        }
+    }
+
+    async function editRecord(){
+        let queryFields = [];
+        let values = [];
+        for (const tr of rowList.querySelectorAll("tr")) {
+            if (!tr.querySelector("[type2='checkbox']").checked)
+                continue;
+            const column = tr.querySelector("span").innerText;
+            const value = tr.querySelector("[type2='input']").value;
+            queryFields.push(`"${column}" = ?`);
+            values.push(value);
+        }
+        const data = await simpleQuery("{{ id }}", `update "{{ table }}" set ${queryFields.join(',')} where ${primaryKeyColumn} = '{{pk}}'`, values);
+    }
+
+    async function insertRecord(){
+        let queryColumns = [];
+        let queryFields = [];
+        let queryValues = [];
+        for (const tr of rowList.querySelectorAll("tr")) {
+            if (!tr.querySelector("[type2='checkbox']").checked)
+                continue;
+            const column = tr.querySelector("span").innerText;
+            const value = tr.querySelector("[type2='input']").value;
+            queryColumns.push(`"${column}"`);
+            queryFields.push("?");
+            queryValues.push(value);
+        }
+        const data = await simpleQuery("{{ id }}", `insert into "{{ table }}"(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+    }
+
+    window.addEventListener("message", (e) => {
+        edit = (e.data["Record"]) ? true : false;
+        if (edit)
+            submitButton.setAttribute("onclick", "editRecord()");
+        else
+            submitButton.setAttribute("onclick", "insertRecord()");
+        let record = (e.data["Record"]) ? e.data["Record"] : {};
+        generateForm(e.data["TableInfo"], record);
+    })
+</script>
+</body>
+</html>
