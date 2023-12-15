@@ -1,7 +1,9 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<table id="row-list"></table>
-<button class="primary" onclick="insertRow()">Insert</button>
+<form action="javascript:insertRow()">
+    <table id="row-list"></table>
+    <input type="submit" class="primary" value="Insert">
+</form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 {% for addon in addons["addRecord"] %}

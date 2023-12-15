@@ -151,7 +151,7 @@ button{
   color: var(--fg);
 }
 
-button:hover{
+button:hover, input[type="submit"]:hover{
   box-shadow: inset 0 0 100px 100px var(--white-05);
 }
 
@@ -214,6 +214,7 @@ input, textarea, select{
   font-weight: normal;
   border: 0;
   white-space: nowrap;
+  min-width: 120px;
 }
 
 .table-editor table th * {

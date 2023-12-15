@@ -70,7 +70,7 @@ async function getTables(database) {
  * @param {*} filter 
  * @returns 
  */
-async function getTable(database, tableName, filter) {
+async function getTableRecords(database, tableName, filter) {
     const res = await fetch("/json/table/" + database + "/" + tableName + "?f=" + filter);
     const data = await res.json();
     return data;
@@ -115,18 +115,6 @@ async function simpleQuery(database, query, values = []) {
     });
     const resJSON = await res.json();
     return resJSON;
-}
-
-/**
- * THIS FUNCTION NEEDS TO BE EXECUTED
- */
-async function deleteTable(database, tableName){
-    const res = await SQLQuery(database, `DROP TABLE IF EXISTS "${tableName}"`);
-    if (res["response"] == "OK"){
-        return tableName;
-    } else {
-        return null;
-    }
 }
 
 /**

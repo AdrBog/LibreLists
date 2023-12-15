@@ -11,13 +11,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-<table id="row-list"></table>
-<button id="submit-button" class="primary" onclick="">Submit</button>
+<form id="submit-form">
+    <table id="row-list"></table>
+    <input type="submit" value="Submit">
+</form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 <script>
     const rowList = document.getElementById("row-list");
-    const submitButton = document.getElementById("submit-button");
+    const submitForm = document.getElementById("submit-form");
     let primaryKeyColumn, edit;
 
     async function generateForm(tableInfo, record){
@@ -45,6 +47,7 @@
             values.push(value);
         }
         const data = await simpleQuery("{{ id }}", `update "{{ table }}" set ${queryFields.join(',')} where ${primaryKeyColumn} = '{{pk}}'`, values);
+        (data["response"] == "OK") ? alert("Record edited") : alert("Error:\n" + data["why"]);
     }
 
     async function insertRecord(){
@@ -61,14 +64,15 @@
             queryValues.push(value);
         }
         const data = await simpleQuery("{{ id }}", `insert into "{{ table }}"(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+        (data["response"] == "OK") ? alert("Record inserted") : alert("Error:\n" + data["why"]);
     }
 
     window.addEventListener("message", (e) => {
         edit = (e.data["Record"]) ? true : false;
         if (edit)
-            submitButton.setAttribute("onclick", "editRecord()");
+            submitForm.setAttribute("action", "javascript:editRecord()");
         else
-            submitButton.setAttribute("onclick", "insertRecord()");
+            submitForm.setAttribute("action", "javascript:insertRecord()");
         let record = (e.data["Record"]) ? e.data["Record"] : {};
         generateForm(e.data["TableInfo"], record);
     })

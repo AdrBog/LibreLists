@@ -1,8 +1,10 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<table id="row-list"></table>
-<button class="primary" onclick="updateRecord()">Update</button>
-<button onclick="deleteRecord()">Delete record</button>
+<form action="javascript:updateRecord()">
+    <table id="row-list"></table>
+    <input type="submit" class="primary" value="Update">
+    <button type="button" onclick="deleteRecord()">Delete record</button>
+</form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 {% for addon in addons["editRecord"] %}
@@ -51,6 +53,8 @@
         try{
             parent.select("{{ table }}");
         }catch{}
+
+        return false;
     }
 
     async function deleteRecord(){

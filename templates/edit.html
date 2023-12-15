@@ -42,9 +42,9 @@
     <span id="column-menu-name" style="padding-bottom: 0px; font-weight: bold;"><b>Name</b></span>
     <span id="column-menu-type" style="font-size: 12px;">Type</span>
     <hr>
-    <a href="#" onclick="SQLiteOnce('Rename Column', `alter table ${currentTable}\nrename column ${selectedColumn} to `)">Rename Column</a>
+    <a href="#" onclick="SQLiteOnce('Rename Column', `alter table ${currentTable}\nrename column '${selectedColumn}' to `)">Rename Column</a>
     <hr>
-    <a href="#" onclick="SQLiteOnce('Delete Column', `alter table ${currentTable}\ndrop column ${selectedColumn}`)" style="color: red;">Delete Column</a>
+    <a href="#" onclick="SQLiteOnce('Delete Column', `alter table ${currentTable}\ndrop column '${selectedColumn}'`)" style="color: red;">Delete Column</a>
 </div>
 
 <div id="table-list" class="table-list">
@@ -186,9 +186,8 @@
     async function refreshTableList() {
         const tables = await getTables("{{ id }}");
         TABLE_LIST_BUTTONS.innerHTML = "";
-        for (const table of tables) {
-            addToTableList(table);
-        }
+        for (const table of tables)
+            addToTableList(TABLE_LIST_BUTTONS, table);
     }
 
     function selectNone(){
@@ -208,7 +207,7 @@
                 table.classList.remove("selected");
 
         try {
-            const records = await getTable("{{ id }}", selectTable, filter);
+            const records = await getTableRecords("{{ id }}", selectTable, filter);
             const tableColumns = await getTableColumns("{{ id }}", selectTable);
             currentTableCreateInfo = await getTableCreationInfo("{{ id }}", selectTable);
             currentTableInfo = tableColumns;
@@ -235,13 +234,12 @@
             return true;
     }
 
-    function addToTableList(tableName){
+    function addToTableList(tableList, tableName){
         const button = document.createElement("button");
         button.innerHTML = tableName;
         button.setAttribute("id", "table_" + tableName);
         button.setAttribute("onclick", "select('" + tableName + "')");
-        TABLE_LIST_BUTTONS.appendChild(button);
-        TABLE_LIST_BUTTONS.appendChild(document.createElement("br"));
+        tableList.appendChild(button);
     }
 
     async function insertTableDialog(){
@@ -290,9 +288,12 @@
             return;
         
         if (await POP.confirm("Are you sure you want to delete table \"" + tableName + "\"?")){
-            if (await deleteTable("{{ id }}", tableName)){
+            const res = await SQLQuery("{{ id }}", `DROP TABLE IF EXISTS "${tableName}"`);
+            if (res["response"] == "OK"){
                 document.getElementById("table_" + tableName).remove();
                 selectNone();
+            } else {
+                return null;
             }
         }
     }

@@ -7,7 +7,7 @@ body{
     scrollbar-color: var(--bg) var(--fg);
 }
 
-button{
+button, input[type="submit"]{
     border: 1px solid var(--black-02);
     border-radius: 0px;
     background-color: var(--black-02);
@@ -26,14 +26,17 @@ input, select, textarea {
     border-radius: 0;
     border: 1px solid var(--black-02);
     margin-right: 8px;
-    resize: vertical;
     background-color: var(--bg-2);
     color: var(--fg-2);
 }
 
+textarea{
+    resize: vertical;
+}
+
 .primary{
-    background-color: var(--primary-bg);
-    color: var(--primary-fg);
+    background-color: var(--primary-bg) !important;
+    color: var(--primary-fg) !important;
 }
 
 .item{
@@ -41,7 +44,7 @@ input, select, textarea {
     flex-direction: row;
 }
 
-button:hover{
+button:hover, input[type="submit"]:hover{
     box-shadow: inset 0 0 100px 100px var(--white-05);
 }
 

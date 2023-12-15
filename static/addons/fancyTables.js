@@ -33,9 +33,14 @@ window.addEventListener("load", () => {
 
         th[entry-type="COLOR"]::before{content: "󰌁 ";}
 
-        th[entry-type="DATE"]::before, th[entry-type="WEEK"]::before{
+        th[entry-type="DATE"]::before, 
+        th[entry-type="DATETIME"]::before, 
+        th[entry-type="MONTH"]::before, 
+        th[entry-type="WEEK"]::before{
             content: " ";
         }
+
+        th[entry-type="TIME"]::before{content: " ";}
 
         th[entry-type="BLOB"]::before{content: " ";}
 
@@ -43,11 +48,16 @@ window.addEventListener("load", () => {
 
         th[entry-type="EMAIL"]::before{content: " ";}
 
-        th[entry-type="NUMBER"]::before, th[entry-type="INTEGER"]::before, th[entry-type="REAL"]::before{
+        th[entry-type="URL"]::before{content: " ";}
+
+        th[entry-type="NUMBER"]::before, 
+        th[entry-type="INTEGER"]::before, 
+        th[entry-type="REAL"]::before{
             content: " ";
         }
 
-        th[entry-type="VARCHAR"]::before, th[entry-type="LONGVARCHAR"]::before{
+        th[entry-type="VARCHAR"]::before, 
+        th[entry-type="LONGVARCHAR"]::before{
             content: "󰦪 ";
         }
         

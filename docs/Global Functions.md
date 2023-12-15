@@ -88,15 +88,15 @@ for (const table of tables) {
 }
 ```
 
-### getTable(database, tableName, filter)
-Not to be mistaken with getTables(). This function will return JSON of table information. 
+### getTableRecords(database, tableName, filter)
+This function will all records of a table
 
 Example:
 ```js
 // Without filters
-const data = await getTable("foo", "bar");
+const data = await getTableRecords("foo", "bar");
 // With filters
-const data = await getTable("foo", "bar", "Name LIKE 'Jhon.*'");
+const data = await getTableRecords("foo", "bar", "Name LIKE 'Jhon%'");
 ```
 
 ### deleteTable(database, tableName)

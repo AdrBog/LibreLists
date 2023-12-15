@@ -77,11 +77,15 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
             "VARCHAR": "VARCHAR",
             "LONGVARCHAR": "LONGVARCHAR",
             "EMAIL": "EMAIL",
+            "URL": "URL",
             "NUMBER": "NUMBER",
             "INTEGER": "INTEGER",
             "REAL": "REAL",
             "BOOLEAN": "BOOLEAN",
             "DATE": "DATE",
+            "TIME": "TIME",
+            "DATETIME": "DATETIME",
+            "MONTH": "MONTH",
             "WEEK": "WEEK",
             "COLOR": "COLOR",
             "BLOB": "BLOB"
@@ -186,6 +190,15 @@ function addRowField(column){
         case "DATE":
             input.setAttribute("type", "date");
             break;
+        case "TIME":
+            input.setAttribute("type", "time");
+            break;
+        case "DATETIME":
+            input.setAttribute("type", "datetime-local");
+            break;
+        case "MONTH":
+            input.setAttribute("type", "month");
+            break;
         case "WEEK":
             input.setAttribute("type", "week");
             break;
@@ -194,6 +207,9 @@ function addRowField(column){
             break;
         case "EMAIL":
             input.setAttribute("type", "email");
+            break;
+        case "URL":
+            input.setAttribute("type", "url");
             break;
         case "VARCHAR":
         case "LONGVARCHAR":
