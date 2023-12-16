@@ -32,7 +32,7 @@
         <i class="fa fa-caret-down"></i>
     </button>
     <div id="database-dropdown" class="dropdown-content">
-        <a href="#" onclick="SQLWindow('SQL Window', '', true, true)">SQL Window</a>
+        <a href="#" onclick="SQLiteLoop()">SQL Window</a>
     </div>
 </div>
 {% endblock %}
@@ -42,9 +42,9 @@
     <span id="column-menu-name" style="padding-bottom: 0px; font-weight: bold;"><b>Name</b></span>
     <span id="column-menu-type" style="font-size: 12px;">Type</span>
     <hr>
-    <a href="#" onclick="SQLWindow('Rename Column', `alter table ${currentTable}\nrename column ${selectedColumn} to `, false, true, false)">Rename Column</a>
+    <a href="#" onclick="SQLiteOnce('Rename Column', `alter table ${currentTable}\nrename column '${selectedColumn}' to `)">Rename Column</a>
     <hr>
-    <a href="#" onclick="SQLWindow('Rename Column', `alter table ${currentTable}\ndrop column ${selectedColumn}`, false, true, false)" style="color: red;">Delete Column</a>
+    <a href="#" onclick="SQLiteOnce('Delete Column', `alter table ${currentTable}\ndrop column '${selectedColumn}'`)" style="color: red;">Delete Column</a>
 </div>
 
 <div id="table-list" class="table-list">
@@ -53,12 +53,11 @@
     <hr>
     <div id="table-list-buttons"></div>
 </div>
-<div id="table-editor" class="table-editor">
+<div id="table-editor" class="table-editor unselectable">
 </div>
 
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
-<script src="/static/js/addons.js"></script>
 {% for addon in addons["edit"] %}
 <script src="{{ addon }}"></script>
 {% endfor %}
@@ -73,6 +72,9 @@
     const DATABASE_TITLE = document.getElementById("database-title");
 
     var currentTable;
+    var currentTableInfo;
+    var currentTableCreateInfo;
+    var currentRecord;
     var selectedColumn;
     var clickedElement;
     var databaseName;
@@ -90,6 +92,7 @@
                     clickedElement.classList.remove("selected");
                 e.target.classList.add("selected");
                 clickedElement = e.target;
+                currentRecord = getRecordFromTd(e.target);
                 break;    
         }
     })
@@ -157,72 +160,40 @@
         }
     }
 
-    async function SQLWindow(title = "SQL Window", _default = "", loop = false, update = false, showOutput = true){
-        const query = await POP.custom([
-            {
-                "Element": "span",
-                "InnerText": title
-            },
-            {
-                "Element": "br",
-            },
-            {
-                "Element": "textarea",
-                "InnerHTML": _default,
-                "Attributes": {
-                    "Cols": "50",
-                    "Rows": "10",
-                    "Placeholder": "Enter your SQL query here",
-                    "Spellcheck": "false",
-                    "Property": "Query",
-                    "Style": "font-size: 20px;"
-                }
-            },
-            {
-                "Element": "br",
-            },
-            {
-                "Element": "button", 
-                "InnerText": "Execute",
-                "Attributes": {
-                    "Return": 0,
-                    "Class": "primary"
-                }
-            },
-            {
-                "Element": "button", 
-                "InnerText": "Cancel",
-                "Attributes": {
-                    "Return": 1,
-                }
-            }
-        ])
+    async function SQLiteLoop(title = "SQL Window", _default = ""){
+        const query = await POP.sqlwindow(title, _default);
         if (parseInt(query["Return"]) == 0){
             const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
             if (res["response"] == "Error")
                 await POP.alert("ERROR \n" + res["why"]);
-            if (showOutput)
+            else
                 await POP.output(res["output"]);
+            select(currentTable);
+            SQLiteLoop(title, query["Properties"]["Query"]);
+        }
+    }
 
-            if (update)
-                select(currentTable);
-            if (loop)
-                SQLWindow(title, query["Properties"]["Query"], loop);
-            
+    async function SQLiteOnce(title = "", _default = ""){
+        const query = await POP.sqlwindow(title, _default);
+        if (parseInt(query["Return"]) == 0){
+            const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
+            if (res["response"] == "Error")
+                await POP.alert("ERROR \n" + res["why"]);
+            select(currentTable);
         }
     }
 
     async function refreshTableList() {
         const tables = await getTables("{{ id }}");
         TABLE_LIST_BUTTONS.innerHTML = "";
-        for (const table of tables) {
-            addToTableList(table);
-        }
+        for (const table of tables)
+            addToTableList(TABLE_LIST_BUTTONS, table);
     }
 
     function selectNone(){
         TABLE_EDITOR.innerHTML = "Select a table to start";
         currentTable = null;
+        currentTableInfo = null;
     }
 
     async function select(tableName) {
@@ -236,8 +207,10 @@
                 table.classList.remove("selected");
 
         try {
-            const records = await getTable("{{ id }}", selectTable, filter);
+            const records = await getTableRecords("{{ id }}", selectTable, filter);
             const tableColumns = await getTableColumns("{{ id }}", selectTable);
+            currentTableCreateInfo = await getTableCreationInfo("{{ id }}", selectTable);
+            currentTableInfo = tableColumns;
 
             TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
 
@@ -249,6 +222,7 @@
             TABLE_EDITOR.append(p);
         }
         currentTable = selectTable;
+        
         return currentTable;
     }
 
@@ -260,13 +234,12 @@
             return true;
     }
 
-    function addToTableList(tableName){
+    function addToTableList(tableList, tableName){
         const button = document.createElement("button");
         button.innerHTML = tableName;
         button.setAttribute("id", "table_" + tableName);
         button.setAttribute("onclick", "select('" + tableName + "')");
-        TABLE_LIST_BUTTONS.appendChild(button);
-        TABLE_LIST_BUTTONS.appendChild(document.createElement("br"));
+        tableList.appendChild(button);
     }
 
     async function insertTableDialog(){
@@ -282,7 +255,7 @@
     async function addRecordDialog(){
         if (!someTableIsSelected())
             return;
-        await POP.iframe("Add record into " + currentTable, "/dialogue/addRecord/{{ id }}/" + currentTable, "400px", "400px");
+        await POP.iframe("Add record into " + currentTable, "/dialogue/addRecord/{{ id }}/" + currentTable, "400px", "400px", "left");
     }
 
     async function editRecordDialog(primaryKey){
@@ -290,7 +263,7 @@
             await POP.alert("Can't edit this record, it doesn't have a primary key")
             return;
         }
-        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px");
+        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px", "left");
     }
 
     function getRowPrimaryKey(td){
@@ -302,14 +275,25 @@
         }
     }
 
+    function getRecordFromTd(td){
+        const tr = td.parentElement;
+        const record = {};
+        for (const cell of tr.querySelectorAll("td"))
+            record[cell.getAttribute("column")] = cell.innerText;
+        return record;
+    }
+
     async function deleteTableDialog(tableName){
         if (!someTableIsSelected())
             return;
         
         if (await POP.confirm("Are you sure you want to delete table \"" + tableName + "\"?")){
-            if (await deleteTable("{{ id }}", tableName)){
+            const res = await SQLQuery("{{ id }}", `DROP TABLE IF EXISTS "${tableName}"`);
+            if (res["response"] == "OK"){
                 document.getElementById("table_" + tableName).remove();
                 selectNone();
+            } else {
+                return null;
             }
         }
     }

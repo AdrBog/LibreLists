@@ -1,14 +1,29 @@
 :root{
-    --primary-bg-color: #04AA6D;
-    --primary-fg-color: rgb(255, 255, 255);
-    --normal-bg-color: rgb(194, 194, 194);
-    --normal-fg-color: rgb(0, 0, 0);
+    --000: #000;
+    --ddd: #ddd;
 
-    --dialogue-bg: #f3f2f1;
-    --dialogue-fg: #000;
+    --bg: #f3f2f1;
+    --fg: #000;
+    --bg-2: #fff;
+    --fg-2: #000;
 
-    --toolbar-bg:               #333333;
-    --toolbar-fg:               #fff;
-    --toolbar-bg-hover:         #505050;
-    --toolbar-fg-hover:         #fff;
+    --a: #00E;
+    
+    --primary-bg: #04AA6D;
+    --primary-fg: rgb(255, 255, 255);
+    
+    --toolbar-bg:#333333;
+    --toolbar-fg:#fff;
+
+    --black-005: rgba(0, 0, 0, 0.05);
+    --black-01: rgba(0, 0, 0, 0.1);
+    --black-02: rgba(0, 0, 0, 0.2);
+    --black-05: rgba(0, 0, 0, 0.5);
+
+    --white-005: rgba(255, 255, 255, 0.05);
+    --white-01: rgba(255, 255, 255, 0.1);
+    --white-02: rgba(255, 255, 255, 0.2);
+    --white-05: rgba(255, 255, 255, 0.5);
+
+    --selected: rgba(70, 255, 190, 0.6);
 }

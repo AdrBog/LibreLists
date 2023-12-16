@@ -1,4 +1,11 @@
 CHANGELOG
+V 0.3.0
+	- New addons: fancyTables.js to make tables look cooler
+	- Now you can create tables and columns with spaces in their names
+	- New data types and data validation
+	- Dark theme added
+V 0.2.2
+	- New addon: choices.js to generates datalists when the CHECK (X IN (A, B, ...)) constraint is detected.
 V 0.2.1
 	- New addon: keyboard.js to edit keyboard shortcuts in Libre Lists
 	- Implementation of the <dialog> tag for popup handling

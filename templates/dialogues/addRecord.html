@@ -1,17 +1,23 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<table id="row-list"></table>
-<button class="primary" onclick="insertRow()">Insert</button>
+<form action="javascript:insertRow()">
+    <table id="row-list"></table>
+    <input type="submit" class="primary" value="Insert">
+</form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
+{% for addon in addons["addRecord"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
 <script>
     const rowList = document.getElementById("row-list");
 
     async function generateList(){
-        const columnList = await getTableColumns("{{ id }}", "{{ table }}");
+        const columnList = parent.currentTableInfo;
         for (const column of columnList) {
             rowList.append(addRowField(column));
         }
+        document.dispatchEvent(new CustomEvent("generation-done"))
     }
 
     async function insertRow(){
@@ -23,11 +29,11 @@
                 continue;
             const column = tr.querySelector("span").innerText;
             const value = tr.querySelector("[type2='input']").value;
-            queryColumns.push(column);
+            queryColumns.push(`"${column}"`);
             queryFields.push("?");
             queryValues.push(value);
         }
-        const data = await simpleQuery("{{ id }}", `insert into {{ table }}(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+        const data = await simpleQuery("{{ id }}", `insert into "{{ table }}"(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
         try{
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);

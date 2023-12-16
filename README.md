@@ -32,6 +32,8 @@ python -m flask run -p 5001
 
 ## License
 
+Libre Lists
+
 Minimalistic Free and Open Source alternative to Microsoft Lists written in Python and Flask. 
 
 Copyright (C) 2023 Adrian Bogdan and contributors

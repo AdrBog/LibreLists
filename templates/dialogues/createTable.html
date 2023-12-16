@@ -1,20 +1,25 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<div>
-    <label>Table name:</label><br>
-    <input type="text" id="table-name">
-</div>
-<hr>
-Columns:
-<div id="column-list"></div>
-<button onclick="columnList.append(addColumnField())">+</button>
-<br>
-<hr>
-<br>
-<button class="primary" onclick="createTable()">Create table</button>
+<form action="javascript:createTable()">
+    <div>
+        <label>Table name:</label><br>
+        <input type="text" id="table-name" required>
+    </div>
+    <hr>
+    Columns:
+    <div id="column-list"></div>
+    <button type="button" onclick="columnList.append(addColumnField())">+</button>
+    <br>
+    <hr>
+    <br>
+    <input type="submit" value="Create table" class="primary">
+</form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 <script src="/static/js/pops.js"></script>
+{% for addon in addons["createTable"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
 <script>
     const columnList = document.getElementById("column-list");
 
@@ -37,14 +42,14 @@ Columns:
             const _default = key.querySelectorAll("input")[1].value;
             if (constraint == "PRIMARY KEY")
                 somePrimaryKey = true;
-            queryTables.push(`${column} ${type} ${constraint} ${_null} ${_default}`);
+            queryTables.push(`"${column}" ${type} ${constraint} ${_null} ${_default}`);
         }
 
         if (!somePrimaryKey)
             if (!await parent.POP.confirm("You have not created any column with primary key.\nThis will make editing cells more difficult.\nAre your sure you want to continue?"))
                 return;
 
-        query = `create table ${tableName} (${queryTables.join(",")})`;
+        query = `create table "${tableName}" (${queryTables.join(",")})`;
 
         const data = await simpleQuery("{{id}}", query);
         if (data["response"] == "Error")

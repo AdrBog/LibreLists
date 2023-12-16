@@ -1,28 +1,34 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<table id="row-list"></table>
-<button class="primary" onclick="updateRecord()">Update</button>
-<button onclick="deleteRecord()">Delete record</button>
+<form action="javascript:updateRecord()">
+    <table id="row-list"></table>
+    <input type="submit" class="primary" value="Update">
+    <button type="button" onclick="deleteRecord()">Delete record</button>
+</form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
+{% for addon in addons["editRecord"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
 <script>
     const rowList = document.getElementById("row-list");
     let primaryKeyColumn;
 
     async function generateList(){
-        const columnList = await getTableColumns("{{ id }}", "{{ table }}");
-        primaryKeyColumn = getPrimaryKeyColumn(columnList);
-        let item = await SQLQuery("{{ id }}", `select * from {{ table }} where ${primaryKeyColumn} = '{{pk}}'`)
-        item = item["output"]["records"][0];
+        const tableInfo = parent.currentTableInfo;
+        const record = parent.currentRecord;
+        primaryKeyColumn = getPrimaryKeyColumn(tableInfo);
 
-        for (const column of columnList)
+        for (const column of tableInfo)
             rowList.append(addRowField(column));
         
         for (const tr of rowList.querySelectorAll("tr")) {
             const input = tr.querySelector("[type2='input']");
             const column = tr.querySelector("span").innerText;
-            input.value = item[column];
+            input.value = record[column];
         }
+
+        document.dispatchEvent(new CustomEvent("generation-done"));
     }
 
     async function updateRecord(){
@@ -33,11 +39,11 @@
                 continue;
             const column = tr.querySelector("span").innerText;
             const value = tr.querySelector("[type2='input']").value;
-            queryFields.push(`${column} = ?`);
+            queryFields.push(`"${column}" = ?`);
             values.push(value);
         }
 
-        const data = await simpleQuery("{{ id }}", `update {{ table }} set ${queryFields.join(',')} where ${primaryKeyColumn} = '{{pk}}'`, values);
+        const data = await simpleQuery("{{ id }}", `update "{{ table }}" set ${queryFields.join(',')} where ${primaryKeyColumn} = '{{pk}}'`, values);
         
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);
@@ -47,11 +53,13 @@
         try{
             parent.select("{{ table }}");
         }catch{}
+
+        return false;
     }
 
     async function deleteRecord(){
-        if (await parent.POP.confirm(`Are you sure you want to delete the record where ${primaryKeyColumn} = '{{pk}}'?`)){
-            const data = await simpleQuery("{{ id }}", `delete from {{ table }} where ${primaryKeyColumn} = '{{pk}}'`);
+        if (await parent.POP.confirm(`Are you sure you want to delete the record where "${primaryKeyColumn}" = '{{pk}}'?`)){
+            const data = await simpleQuery("{{ id }}", `delete from "{{ table }}" where "${primaryKeyColumn}" = '{{pk}}'`);
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);
             else{
@@ -72,5 +80,4 @@
     
     generateList();
 </script>
-
 {% endblock %}

@@ -13,7 +13,7 @@ ADDONS_FILE = "addons.json"
 TABLE_CONFIG_FILE = "tables.json"
 INFO_FILE = "info.json"
 TABLE_DEFAULT_CONFIG = {}
-VERSION = "0.2.1"
+VERSION = "0.3.0"
 
 # FUNCTIONS
 
@@ -113,7 +113,7 @@ def jsonTable(id, table):
     try:
         filters = request.args.get('f', type = str)
         conn = get_db_connection(id)
-        rows = conn.execute(f'SELECT * FROM {table} {filters}').fetchall()
+        rows = conn.execute(f'SELECT * FROM "{table}" {filters}').fetchall()
         conn.close()
         for row in rows:
             item = {}

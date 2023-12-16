@@ -57,6 +57,7 @@ class Pops {
             dialog.append(input);
         }
 
+        dialog.classList.add(theme)
         this.body.appendChild(dialog);
         dialog.showModal()
 
@@ -185,8 +186,15 @@ class Pops {
         return await this.choice(message, [acceptText], theme);
     }
 
-
-    async iframe(title, src, w, h){
+    /**
+     * Display a popup with an iframe inside
+     * @param {*} title 
+     * @param {*} src 
+     * @param {*} w 
+     * @param {*} h 
+     * @returns 
+     */
+    async iframe(title, src, w = "400px", h = "400px", className = "center"){
         return await this.custom([
             {
                 "Element": "p",
@@ -209,9 +217,63 @@ class Pops {
                     "Style": "position: absolute; top: 0; right: 0; min-width: auto;"
                 }
             }
+        ], className)
+    }
+
+    /**
+     * Display a SQL Window where you can insert SQL Queries
+     * @param {*} title 
+     * @param {*} _default 
+     * @returns 
+     */
+    async sqlwindow(title = "SQL Window", _default = ""){
+        return await POP.custom([
+            {
+                "Element": "span",
+                "InnerText": title
+            },
+            {
+                "Element": "br",
+            },
+            {
+                "Element": "textarea",
+                "InnerHTML": _default,
+                "Attributes": {
+                    "Cols": "50",
+                    "Rows": "10",
+                    "Placeholder": "Enter your SQL query here",
+                    "Spellcheck": "false",
+                    "Property": "Query",
+                    "Style": "font-size: 20px;"
+                }
+            },
+            {
+                "Element": "br",
+            },
+            {
+                "Element": "button", 
+                "InnerText": "Execute",
+                "Attributes": {
+                    "Return": 0,
+                    "Class": "primary"
+                }
+            },
+            {
+                "Element": "button", 
+                "InnerText": "Cancel",
+                "Attributes": {
+                    "Return": 1,
+                }
+            }
         ])
     }
 
+    /**
+     * Display a popup table with information
+     * @param {*} info 
+     * @param {*} title 
+     * @returns 
+     */
     async output(info, title = "Output"){
         const table = generateTable(info["records"], info["header"]);
         const output = await POP.custom([
@@ -245,7 +307,7 @@ class Pops {
         ]);
         if (parseInt(output["Return"]) == 1){
             const downloadFile = document.createElement("a");
-            downloadFile.href = "data:attachment/text," + encodeURI(tableToCSV(table));
+            downloadFile.href = "data:attachment/text," + encodeURIComponent(tableToCSV(table));
             downloadFile.target = "_blank";
             downloadFile.download = ID + "_output.csv";
             downloadFile.click();

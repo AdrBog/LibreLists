@@ -18,45 +18,71 @@
 
 const VALID_NAME = /^[a-zA-Z0-9_]{1,50}$/g;
 
+/**
+ * Checks if a text string is valid (no spaces or special characters).
+ * @param {*} string 
+ * @returns 
+ */
 function isValid(string){
     VALID_NAME.lastIndex = 0;
     return VALID_NAME.test(string);
 }
 
-function checkErrors(res, showAlert = true) {
-    if (res["response"] == "Error"){
-        if (showAlert){
-            alert("An error ocurred:\n" + res["why"]);
-        }
-        return false;
-    } else {
-        return true;
-    }
+function fancyText(string){
+    return string.charAt(0).toUpperCase() + string.slice(1).replace(/_/g, " ");
 }
 
+/**
+ * Returns information about a database.
+ * @param {*} database 
+ * @returns 
+ */
 async function getJSONDatabase(database) {
     const res = await fetch("/json/database/" + database);
     const data = await res.json();
     return data;
 }
 
+/**
+ * Returns information about the Libre Lists configuration file.
+ * @returns 
+ */
 async function getJSONConfig() {
     const res = await fetch("/json/config");
     const data = await res.json();
     return data;
 }
 
+/**
+ * Returns the existing tables of a database.
+ * @param {*} database 
+ * @returns 
+ */
 async function getTables(database) {
     const data = await getJSONDatabase(database);
     return data["tables"];
 }
 
-async function getTable(database, tableName, filter) {
+/**
+ * Returns all records of a table
+ * @param {*} database 
+ * @param {*} tableName 
+ * @param {*} filter 
+ * @returns 
+ */
+async function getTableRecords(database, tableName, filter) {
     const res = await fetch("/json/table/" + database + "/" + tableName + "?f=" + filter);
     const data = await res.json();
     return data;
 }
 
+/**
+ * Allows to execute a SQL script on a database.
+ * In the case of commands such as SELECT or PRAGMA, it also returns the records found.
+ * @param {*} database 
+ * @param {*} query 
+ * @returns 
+ */
 async function SQLQuery(database, query) {
     const res = await fetch("/exec/" + database, {
         method: "POST",
@@ -67,6 +93,15 @@ async function SQLQuery(database, query) {
     return resJSON;
 }
 
+/**
+ * Allows you to execute a single SQL query on a database.
+ * It follows the Python SQLite3 syntax, in which you can combine ? with an array of variables,
+ * e.g. query -> "INSERT INTO TABLE VALUES (?,?)", values -> "[name, age]"
+ * @param {*} database 
+ * @param {*} query 
+ * @param {*} values 
+ * @returns 
+ */
 async function simpleQuery(database, query, values = []) {
     let simpleQuery = {};
     simpleQuery["query"] = query;
@@ -82,21 +117,23 @@ async function simpleQuery(database, query, values = []) {
     return resJSON;
 }
 
-async function deleteTable(database, tableName){
-    const res = await SQLQuery(database, "DROP TABLE IF EXISTS " + tableName);
-    if (checkErrors(res)){
-        return tableName;
-    } else {
-        return null;
-    }
-}
-
+/**
+ * Returns a value from the Libre Lists configuration file.
+ * @param {*} attributeName 
+ * @returns 
+ */
 async function getConfig(attributeName){
     const res = await fetch("/json/config");
     const data = await res.json();
     return data[attributeName];
 }
 
+/**
+ * Returns a value from a database information file.
+ * @param {*} database 
+ * @param {*} attributeName 
+ * @returns 
+ */
 async function getInfo(database, attributeName){
     const res = await fetch("/json/database/" + database);
     const data = await res.json();
@@ -107,6 +144,13 @@ async function getTableConfig(database, tableName, attributeName){
     const res = await fetch("/json/table/" + database + "/" + tableName);
     const data = await res.json();
     return data["table_config"][attributeName];
+}
+
+async function getTableCreationInfo(database, tableName){
+    //const query = `select sql from sqlite_master where sql like "%create%${tableName} %" or sql like "%create%${tableName}(%"`;
+    const query = `select sql from sqlite_master where sql like "%create%${tableName}_%"`;
+    const res = await SQLQuery(database, query);
+    return res["output"]["records"][0]["sql"];
 }
 
 async function updateConfig(context, data, database = ""){
@@ -123,6 +167,11 @@ async function updateConfig(context, data, database = ""){
     return resJSON;
 }
 
+/**
+ * Returns a string representing a CSV file based on a table.
+ * @param {*} table 
+ * @returns 
+ */
 function tableToCSV(table){
     csv = "";
     for (const tr of table.querySelectorAll("tr")){
@@ -133,6 +182,12 @@ function tableToCSV(table){
     return csv;
 }
 
+/**
+ * Returns information about the columns of a table
+ * @param {*} database 
+ * @param {*} tableName 
+ * @returns 
+ */
 async function getTableColumns(database, tableName){
     const tableInfo = await SQLQuery(database, `pragma table_info('${tableName}')`)
     const sequence = await SQLQuery(database, `select * from sqlite_sequence where name='${tableName}'`);
