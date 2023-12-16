@@ -29,35 +29,37 @@ window.addEventListener("load", () => {
             font-weight: normal;
         }
 
-        th[entry-type="BOOLEAN"]::before{content: " ";}
+        th[entry-type^="BOOLEAN"]::before{content: " ";}
 
-        th[entry-type="COLOR"]::before{content: "󰌁 ";}
+        th[entry-type^="COLOR"]::before{content: "󰌁 ";}
 
-        th[entry-type="DATE"]::before, 
-        th[entry-type="DATETIME"]::before, 
-        th[entry-type="MONTH"]::before, 
-        th[entry-type="WEEK"]::before{
+        th[entry-type^="DATE"]::before, 
+        th[entry-type^="DATETIME"]::before, 
+        th[entry-type^="MONTH"]::before, 
+        th[entry-type^="WEEK"]::before{
             content: " ";
         }
 
-        th[entry-type="TIME"]::before{content: " ";}
+        th[entry-type^="TIME"]::before{content: " ";}
 
-        th[entry-type="BLOB"]::before{content: " ";}
+        th[entry-type^="BLOB"]::before{content: " ";}
 
-        th[entry-type="TEXT"]::before{content: "󰦩 ";}
+        th[entry-type^="TEXT"]::before{content: "󰦩 ";}
 
-        th[entry-type="EMAIL"]::before{content: " ";}
+        th[entry-type^="EMAIL"]::before{content: " ";}
 
-        th[entry-type="URL"]::before{content: " ";}
+        th[entry-type^="URL"]::before{content: " ";}
 
-        th[entry-type="NUMBER"]::before, 
-        th[entry-type="INTEGER"]::before, 
-        th[entry-type="REAL"]::before{
+        th[entry-type^="NUMBER"]::before, 
+        th[entry-type^="NUMERIC"]::before, 
+        th[entry-type^="INTEGER"]::before,
+        th[entry-type^="BIGINT"]::before,
+        th[entry-type^="INT"]::before,
+        th[entry-type^="REAL"]::before{
             content: " ";
         }
 
-        th[entry-type="VARCHAR"]::before, 
-        th[entry-type="LONGVARCHAR"]::before{
+        th[entry-type*="VARCHAR"]::before{
             content: "󰦪 ";
         }
         

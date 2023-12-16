@@ -1,7 +1,9 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<div id="column-list"></div>
-<button class="primary" onclick="addColumn()">Add column</button>
+<form action="javascript:addColumn()">
+    <div id="column-list"></div>
+    <input type="submit" class="primary" value="Add column">
+</form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 {% for addon in addons["addColumn"] %}
@@ -17,12 +19,6 @@
         const constraint = columnData.querySelectorAll("select")[1].value;
         const _null = columnData.querySelectorAll("select")[2].value;
         const _default = columnData.querySelectorAll("input")[1].value;
-        
-        if (!name){
-            parent.POP.alert("Enter a name first");
-            return;
-        }
-
         const data = await SQLQuery("{{ id }}", `alter table "{{ table }}" add column "${name}" ${type} ${constraint} ${_null} ${_default};`);
 
         try{
@@ -34,6 +30,6 @@
         }catch{}
     }
 
-    columnList.append(addColumnField("", "", "", "", false))
+    columnList.append(addColumnField("", "TEXT", "", "", false))
 </script>
 {% endblock %}

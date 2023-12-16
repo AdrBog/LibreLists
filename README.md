@@ -29,3 +29,24 @@ python -m flask run -p 5001
 ![Screenshot3](res/3.png)
 ![Screenshot4](res/4.png)
 ![Screenshot5](res/5.png)
+
+## License
+
+Libre Lists
+
+Minimalistic Free and Open Source alternative to Microsoft Lists written in Python and Flask. 
+
+Copyright (C) 2023 Adrian Bogdan and contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.

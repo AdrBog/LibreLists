@@ -1,17 +1,19 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<div>
-    <label>Table name:</label><br>
-    <input type="text" id="table-name">
-</div>
-<hr>
-Columns:
-<div id="column-list"></div>
-<button onclick="columnList.append(addColumnField())">+</button>
-<br>
-<hr>
-<br>
-<button class="primary" onclick="createTable()">Create table</button>
+<form action="javascript:createTable()">
+    <div>
+        <label>Table name:</label><br>
+        <input type="text" id="table-name" required>
+    </div>
+    <hr>
+    Columns:
+    <div id="column-list"></div>
+    <button type="button" onclick="columnList.append(addColumnField())">+</button>
+    <br>
+    <hr>
+    <br>
+    <input type="submit" value="Create table" class="primary">
+</form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 <script src="/static/js/pops.js"></script>

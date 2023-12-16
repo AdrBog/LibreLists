@@ -21,6 +21,11 @@
  * make it easy to generate interactive tables and forms.
  */
 
+function setAttributes(el, attrs) {
+    for(var key in attrs)
+        el.setAttribute(key, attrs[key]);
+}
+
 function appendOptionToSelect(innerText, value, select, selectedValue = ""){
     const option = document.createElement("option");
     option.innerText = innerText;
@@ -73,22 +78,22 @@ function generateTable(records, columns){
 function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _delete = true){
     const options = {
         "columnType":{
-            "TEXT": "TEXT",
-            "VARCHAR": "VARCHAR",
-            "LONGVARCHAR": "LONGVARCHAR",
-            "EMAIL": "EMAIL",
-            "URL": "URL",
-            "NUMBER": "NUMBER",
-            "INTEGER": "INTEGER",
-            "REAL": "REAL",
+            "BLOB": "BLOB",
             "BOOLEAN": "BOOLEAN",
-            "DATE": "DATE",
-            "TIME": "TIME",
-            "DATETIME": "DATETIME",
-            "MONTH": "MONTH",
-            "WEEK": "WEEK",
             "COLOR": "COLOR",
-            "BLOB": "BLOB"
+            "DATE": "DATE",
+            "DATETIME": "DATETIME",
+            "EMAIL": "EMAIL",
+            "INTEGER": "INTEGER",
+            "LONGVARCHAR": "LONGVARCHAR",
+            "MONTH": "MONTH",
+            "NUMBER": "NUMBER",
+            "REAL": "REAL",
+            "TEXT": "TEXT",
+            "TIME": "TIME",
+            "URL": "URL",
+            "VARCHAR": "VARCHAR",
+            "WEEK": "WEEK",
         },
         "columnPrimaryKey":{
             "": "",
@@ -112,11 +117,40 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     const deleteButton = document.createElement("button");
 
     div.classList.add("item");
-    columnName.placeholder = "NAME";
-    columnName.value = name;
-    columnExtra.placeholder = "EXTRA (E.G. DEFAULT, CHECK)";
-    columnExtra.setAttribute("list", "default-options");
+
+    deleteButton.innerText = "X";
+    setAttributes(deleteButton, {
+        "delete": true,
+        "type": "button"
+    })
+
+    setAttributes(columnName, {
+        "title": "Column name", 
+        "placeholder": "NAME",
+        "value": name,
+        "required": true
+    })
+
+    setAttributes(columnType, {
+        "title": "The type of information to be stored, note that SQLite does not usually check if the type of information is valid."
+    })
+
+    setAttributes(columnPrimaryKey, {
+        "title": "Sets the PRIMARY KEY or UNIQUE contraint, this option does not usually work once the table is created."
+    })
+
+    setAttributes(columnNull, {
+        "title": "Sets the NOT NULL or AUTOINCREMENT contraint, note that AUTOINCREMENT only works in INTEGER PRIMARY KEY"
+    })
+
+    setAttributes(columnExtra, {
+        "title": "Add extra constraints, such as DEFAULT or CHECK",
+        "placeholder": "EXTRA (E.G. DEFAULT, CHECK)",
+        "list": "default-options"
+    })
+
     columnExtraList.id = "default-options";
+
     for (const key of datalist) {
         const option = document.createElement("option");
         option.value = key;
@@ -129,15 +163,6 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
                 (key == "columnType") ? type :
                 (key == "columnPrimaryKey") ? constraint : _null
             )
-
-    deleteButton.innerText = "X";
-    deleteButton.setAttribute("delete", true);
-
-    columnName.title = "Column name";
-    columnType.title = "The type of information to be stored, note that SQLite does not usually check if the type of information is valid.";
-    columnPrimaryKey.title = "Sets the PRIMARY KEY or UNIQUE contraint, this option does not usually work once the table is created.";
-    columnNull.title = "Sets the NOT NULL or AUTOINCREMENT contraint, note that AUTOINCREMENT only works in INTEGER PRIMARY KEY";
-    columnExtra.title = "Add extra constraints, such as DEFAULT or CHECK";
 
     div.append(columnName, columnType, columnPrimaryKey, columnNull, columnExtra, columnExtraList);
     if (_delete)
@@ -164,13 +189,18 @@ function addRowField(column){
     let listOfTd = [checkbox, span, input];
     const BOOLEAN_OPTIONS = [0, 1];
 
-    checkbox.setAttribute("type", "checkbox");
-    checkbox.setAttribute("type2", "checkbox");
-    checkbox.setAttribute("name", column["Name"]);
+    setAttributes(checkbox, {
+        "type": "checkbox",
+        "type2": "checkbox",
+        "name": column["Name"]
+    })
+    
     for (const element of [input, select, textarea]) {
-        element.setAttribute("type2", "input");
-        element.setAttribute("column", column["Name"]);
-        element.setAttribute("name", column["Name"]);
+        setAttributes(element, {
+            "type2": "input",
+            "column": column["Name"],
+            "name": column["Name"]
+        })
     }
 
     span.style.minWidth = "100px";
@@ -183,8 +213,11 @@ function addRowField(column){
 
     switch(column["Type"].toUpperCase()){
         case "INTEGER":
+        case "INT":
+        case "BIGINT":
         case "REAL":
         case "NUMBER":
+        case "NUMERIC":
             input.setAttribute("type", "number");
             break;
         case "DATE":
@@ -211,6 +244,7 @@ function addRowField(column){
         case "URL":
             input.setAttribute("type", "url");
             break;
+        case "NVARCHAR":
         case "VARCHAR":
         case "LONGVARCHAR":
             listOfTd = [checkbox, span, textarea];
