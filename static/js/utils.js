@@ -56,10 +56,20 @@ function generateTableRecord(column, value){
     td.setAttribute("entry-type", column["Type"]);
     td.setAttribute("value", value);
     td.setAttribute("column", column["Name"]);
-    if (column["Type"] != "URLDATA")
-        td.innerText = value;
-    else
-        td.innerHTML = `<img src="${value}">`;
+    switch (column["Type"]) {
+        case "URLDATA":
+            td.innerHTML = `<img src="${value}">`;
+            break;
+        case "URL":
+            td.innerHTML = `<a href="${value}">${value}</a>`;
+            break;
+        case "EMAIL":
+            td.innerHTML = `<a href="mailto:${value}">${value}</a>`;
+            break;
+        default:
+            td.innerText = value;
+            break;
+    }  
     return td;
 }
 
