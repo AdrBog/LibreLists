@@ -100,7 +100,6 @@
     TABLE_EDITOR.addEventListener("dblclick", (e) => {
         switch (e.target.nodeName.toLowerCase()) {
             case "td":
-                const colName = e.target.getAttribute("column");
                 editRecordDialog(getRowPrimaryKey(e.target));
                 break;
         }

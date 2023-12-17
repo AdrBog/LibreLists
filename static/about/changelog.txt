@@ -1,4 +1,6 @@
 CHANGELOG
+V 0.3.1
+	- New data type URLDATA (NOT BLOB): Now you can save binary files as URL data in your database
 V 0.3.0
 	- New addons: fancyTables.js to make tables look cooler
 	- Now you can create tables and columns with spaces in their names

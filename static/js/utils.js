@@ -56,7 +56,10 @@ function generateTableRecord(column, value){
     td.setAttribute("entry-type", column["Type"]);
     td.setAttribute("value", value);
     td.setAttribute("column", column["Name"]);
-    td.innerText = value;
+    if (column["Type"] != "URLDATA")
+        td.innerText = value;
+    else
+        td.innerHTML = `<img src="${value}">`;
     return td;
 }
 
@@ -84,6 +87,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
             "DATE": "DATE",
             "DATETIME": "DATETIME",
             "EMAIL": "EMAIL",
+            "URLDATA": "URLDATA",
             "INTEGER": "INTEGER",
             "LONGVARCHAR": "LONGVARCHAR",
             "MONTH": "MONTH",
@@ -240,6 +244,11 @@ function addRowField(column){
             break;
         case "EMAIL":
             input.setAttribute("type", "email");
+            break;
+        case "URLDATA":
+            checkbox.removeAttribute("checked");
+            input.setAttribute("type", "file");
+            tr.setAttribute("file", true);
             break;
         case "URL":
             input.setAttribute("type", "url");

@@ -42,7 +42,12 @@
             if (!tr.querySelector("[type2='checkbox']").checked)
                 continue;
             const column = tr.querySelector("span").innerText;
-            const value = tr.querySelector("[type2='input']").value;
+            if (tr.getAttribute("file") == "true"){
+                let file = tr.querySelector("[type2='input']").files[0];
+                value = await readUploadedFileAsText(file);
+            } else {
+                value = tr.querySelector("[type2='input']").value;
+            }
             queryFields.push(`"${column}" = ?`);
             values.push(value);
         }
@@ -58,7 +63,12 @@
             if (!tr.querySelector("[type2='checkbox']").checked)
                 continue;
             const column = tr.querySelector("span").innerText;
-            const value = tr.querySelector("[type2='input']").value;
+            if (tr.getAttribute("file") == "true"){
+                let file = tr.querySelector("[type2='input']").files[0];
+                value = await readUploadedFileAsText(file);
+            } else {
+                value = tr.querySelector("[type2='input']").value;
+            }
             queryColumns.push(`"${column}"`);
             queryFields.push("?");
             queryValues.push(value);

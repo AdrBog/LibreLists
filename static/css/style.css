@@ -58,6 +58,7 @@ a{
 .navbar, .navbar a, .dropdown .dropbtn, .dropdown-content{
   background-color: var(--toolbar-bg);
   color: var(--toolbar-fg);
+  z-index: 2;
 }
 
 .dropdown-content hr{
@@ -194,6 +195,40 @@ input, textarea, select{
   margin: 0px;
   min-height: 120px;
   min-width: 120px;
+}
+
+.table-editor table td img {
+  height: 128px;
+  object-fit: contain;
+  margin: auto;
+  display: block;
+}
+
+.table-editor table td[value^="data:"]{
+  position: relative;
+}
+
+.table-editor table td[value^="data:"]::before{
+  position: absolute;
+  font-family: 'aurulent-sans-mono';
+  display: table-cell;
+  top: 20%;
+  font-size: 64px;
+  width: 100%;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.table-editor table td[value^="data:application/pdf;"]::before {
+  content: "";
+}
+
+.table-editor table td[value^="data:application/zip;"]::before {
+  content: "";
+}
+
+.table-editor table td[value^="data:text/"]::before {
+  content: "";
 }
 
 .table-editor table tr:nth-child(even){
