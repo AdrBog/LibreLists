@@ -11,12 +11,14 @@
 {% endfor %}
 <script>
     const rowList = document.getElementById("row-list");
+    let oldRecord;
 
     async function generateList(){
         const columnList = parent.currentTableInfo;
         for (const column of columnList) {
             rowList.append(addRowField(column));
         }
+        oldRecord = getRecordFromForm(document.querySelector("form"));
         document.dispatchEvent(new CustomEvent("generation-done"))
     }
 
@@ -24,10 +26,11 @@
         let queryColumns = [];
         let queryFields = [];
         let queryValues = [];
+        const newRecord = {};
         for (const tr of rowList.querySelectorAll("tr")) {
             if (!tr.querySelector("[type2='checkbox']").checked)
                 continue;
-            const column = tr.querySelector("span").innerText;
+            const column = tr.querySelector("label").innerText;
             let value;
             if (tr.getAttribute("file") == "true"){
                 let file = tr.querySelector("[type2='input']").files[0];
@@ -38,15 +41,23 @@
             queryColumns.push(`"${column}"`);
             queryFields.push("?");
             queryValues.push(value);
+            newRecord[column] = value;
         }
         const data = await simpleQuery("{{ id }}", `insert into "{{ table }}"(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
-        try{
-            if (data["response"] == "Error")
-                parent.POP.alert("Error:\n" + data["why"]);
-            else
-                parent.POP.alert("Item inserted");
-            parent.select("{{ table }}");
-        }catch{}
+        if (data["response"] == "Error"){
+            parent.POP.alert("Error:\n" + data["why"]);
+        }else{
+            parent.POP.alert("Record inserted");
+            parent.dispatchEvent(new CustomEvent("record-inserted", {
+                detail: {
+                    databaseName: "{{ id }}",
+                    tableName: "{{ table }}",
+                    record: compareRecords(oldRecord, newRecord)
+                }
+            }))
+        }
+        oldRecord = getRecordFromForm(document.querySelector("form"));
+        parent.select("{{ table }}");
     }
     
     generateList();

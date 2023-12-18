@@ -33,7 +33,7 @@ def openfile():
     if not os.path.exists(PROJECT_DIR):
         os.makedirs(PROJECT_DIR)
     databases = os.listdir(PROJECT_DIR)
-    return render_template("index.html", databases=databases, ver=VERSION, addons=updateAddons())
+    return render_template("index.html", databases=sorted(databases), ver=VERSION, addons=updateAddons())
 
 @app.route('/edit/<id>')
 def edit(id):
@@ -105,6 +105,7 @@ def jsonDatabase(id):
         if table[0] not in data["metadata"]["hidden_tables"]:
             data["tables"].append(table[0])
     conn.close()
+    data["tables"] = sorted(data["tables"])
     return jsonify(data)
 
 @app.route('/json/table/<id>/<table>', methods=('GET', 'POST'))

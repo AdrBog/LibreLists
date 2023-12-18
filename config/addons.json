@@ -4,7 +4,8 @@
     ],
     "edit": [
         "/static/addons/keyboard.js",
-        "/static/addons/fancyTables.js"
+        "/static/addons/fancyTables.js",
+        "/static/addons/automation.js"
     ],
     "editRecord": [
         "/static/addons/choices.js"

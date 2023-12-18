@@ -12,6 +12,7 @@
 {% endfor %}
 <script>
     const rowList = document.getElementById("row-list");
+    let oldRecord;
     let primaryKeyColumn;
 
     async function generateList(){
@@ -24,9 +25,11 @@
         
         for (const tr of rowList.querySelectorAll("tr")) {
             const input = tr.querySelector("[type2='input']");
-            const column = tr.querySelector("span").innerText;
+            const column = tr.querySelector("label").innerText;
             input.value = record[column];
         }
+
+        oldRecord = getRecordFromForm(document.querySelector("form"));
 
         document.dispatchEvent(new CustomEvent("generation-done"));
     }
@@ -34,10 +37,11 @@
     async function updateRecord(){
         let queryFields = [];
         let values = [];
+        const newRecord = {}
         for (const tr of rowList.querySelectorAll("tr")) {
             if (!tr.querySelector("[type2='checkbox']").checked)
                 continue;
-            const column = tr.querySelector("span").innerText;
+            const column = tr.querySelector("label").innerText;
             let value;
             if (tr.getAttribute("file") == "true"){
                 let file = tr.querySelector("[type2='input']").files[0];
@@ -47,18 +51,25 @@
             }
             queryFields.push(`"${column}" = ?`);
             values.push(value);
+            newRecord[column] = value;
         }
 
         const data = await simpleQuery("{{ id }}", `update "{{ table }}" set ${queryFields.join(',')} where ${primaryKeyColumn} = '{{pk}}'`, values);
         
-            if (data["response"] == "Error")
-                parent.POP.alert("Error:\n" + data["why"]);
-            else
-                parent.POP.alert("Record edited");
-
-        try{
-            parent.select("{{ table }}");
-        }catch{}
+        if (data["response"] == "Error"){
+            parent.POP.alert("Error:\n" + data["why"]);
+        }else{
+            parent.POP.alert("Record edited");
+            parent.dispatchEvent(new CustomEvent("record-edited", {
+                detail: {
+                    databaseName: "{{ id }}",
+                    tableName: "{{ table }}",
+                    record: compareRecords(oldRecord, newRecord)
+                }
+            }))
+        }
+        oldRecord = getRecordFromForm(document.querySelector("form"));
+        parent.select("{{ table }}");
 
         return false;
     }
@@ -70,17 +81,21 @@
                 parent.POP.alert("Error:\n" + data["why"]);
             else{
                 parent.POP.alert("Record deleted");
+                parent.dispatchEvent(new CustomEvent("record-deleted", {
+                    detail: {
+                        databaseName: "{{ id }}",
+                        tableName: "{{ table }}",
+                        record: oldRecord
+                    }
+                }))
                 clearForm();
             }
-
-            try{
-                parent.select("{{ table }}");
-            }catch{}
+            parent.select("{{ table }}");
         }
     }
 
     function clearForm(){
-        for (const e of document.querySelectorAll("table, button"))
+        for (const e of document.querySelectorAll("table, button, input"))
             e.remove();
     }
     

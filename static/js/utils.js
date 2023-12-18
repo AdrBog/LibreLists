@@ -97,7 +97,6 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
             "DATE": "DATE",
             "DATETIME": "DATETIME",
             "EMAIL": "EMAIL",
-            "URLDATA": "URLDATA",
             "INTEGER": "INTEGER",
             "LONGVARCHAR": "LONGVARCHAR",
             "MONTH": "MONTH",
@@ -106,6 +105,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
             "TEXT": "TEXT",
             "TIME": "TIME",
             "URL": "URL",
+            "URLDATA": "URLDATA",
             "VARCHAR": "VARCHAR",
             "WEEK": "WEEK",
         },
@@ -196,11 +196,11 @@ function getPrimaryKeyColumn(columnList){
 function addRowField(column){
     const tr = document.createElement("tr");
     const checkbox = document.createElement("input");
-    const span = document.createElement("span");
+    const label = document.createElement("label");
     const input = document.createElement("input");
     const select = document.createElement("select");
     const textarea = document.createElement("textarea");
-    let listOfTd = [checkbox, span, input];
+    let listOfTd = [checkbox, label, input];
     const BOOLEAN_OPTIONS = [0, 1];
 
     setAttributes(checkbox, {
@@ -209,16 +209,20 @@ function addRowField(column){
         "name": column["Name"]
     })
     
-    for (const element of [input, select, textarea]) {
+    for (const element of [input, select, textarea])
         setAttributes(element, {
             "type2": "input",
             "column": column["Name"],
-            "name": column["Name"]
+            "name": column["Name"],
+            "id": column["Name"] 
         })
-    }
 
-    span.style.minWidth = "100px";
-    span.innerText = column["Name"];
+    setAttributes(label, {
+        "for": column["Name"],
+        "style": "min-width: 100%;"
+    })
+    
+    label.innerText = column["Name"];
 
     if (column["Sequence"])
         input.value = column["Sequence"] + 1;
@@ -266,18 +270,18 @@ function addRowField(column){
         case "NVARCHAR":
         case "VARCHAR":
         case "LONGVARCHAR":
-            listOfTd = [checkbox, span, textarea];
+            listOfTd = [checkbox, label, textarea];
             break;
         case "BOOL":
         case "BOOLEAN":
             for (const booleanOption of BOOLEAN_OPTIONS)
                 appendOptionToSelect(booleanOption, booleanOption, select);
-            listOfTd = [checkbox, span, select];
+            listOfTd = [checkbox, label, select];
             break;
         case "BLOB":
             checkbox.removeAttribute("checked");
             checkbox.setAttribute("disabled", "disabled");
-            span.setAttribute("disabled", "disabled");
+            label.setAttribute("disabled", "disabled");
             input.setAttribute("disabled", "disabled");
             input.title = "Can't handle binary data";
         default:
@@ -291,4 +295,27 @@ function addRowField(column){
         tr.append(e);
     }
     return tr;
+}
+
+function getRecordFromForm(form){
+    const record = {}
+    for (const label of form.querySelectorAll("label")) {
+        const column = label.innerText;
+        record[column] = form.querySelector(`[id="${column}"]`).value;
+    }
+    return record;
+}
+
+function compareRecords(oldRecord, newRecord){
+    const record = {}
+    for (const key in oldRecord) {
+        if (newRecord[key])
+            if (newRecord[key] != oldRecord[key])
+                record[key] = newRecord[key]
+            else
+                record[key] = oldRecord[key]
+        else
+            record[key] = oldRecord[key]
+    }
+    return record;
 }
