@@ -20,71 +20,69 @@
 <script>
     const rowList = document.getElementById("row-list");
     const submitForm = document.getElementById("submit-form");
-    let primaryKeyColumn, edit;
+    const searchData = {};
+    let primaryKeyColumn, edit, oldRecord;
 
-    async function generateForm(tableInfo, record){
+    async function init(tableInfo, record){
         primaryKeyColumn = getPrimaryKeyColumn(tableInfo);
+        searchData[primaryKeyColumn] = "{{ pk }}";
 
         for (const column of tableInfo)
             rowList.append(addRowField(column));
         
         for (const tr of rowList.querySelectorAll("tr")) {
             const input = tr.querySelector("[type2='input']");
-            const column = tr.querySelector("span").innerText;
+            const column = tr.querySelector("label").innerText;
             input.value = (record[column]) ? (record[column]) : "";
         }
+        oldRecord = getRecordFromForm(document.querySelector("form"));
+        document.dispatchEvent(new CustomEvent("generation-done"));
     }
 
-    async function editRecord(){
-        let queryFields = [];
-        let values = [];
+    async function submitUpdate(){
+        const newRecord = {};
         for (const tr of rowList.querySelectorAll("tr")) {
             if (!tr.querySelector("[type2='checkbox']").checked)
                 continue;
-            const column = tr.querySelector("span").innerText;
+            const column = tr.querySelector("label").innerText;
             if (tr.getAttribute("file") == "true"){
                 let file = tr.querySelector("[type2='input']").files[0];
                 value = await readUploadedFileAsText(file);
             } else {
                 value = tr.querySelector("[type2='input']").value;
             }
-            queryFields.push(`"${column}" = ?`);
-            values.push(value);
+            newRecord[column] = value;
         }
-        const data = await simpleQuery("{{ id }}", `update "{{ table }}" set ${queryFields.join(',')} where ${primaryKeyColumn} = '{{pk}}'`, values);
+        const data = await updateRecord("{{ id }}", "{{ table }}", newRecord, searchData);
         (data["response"] == "OK") ? alert("Record edited") : alert("Error:\n" + data["why"]);
     }
 
-    async function insertRecord(){
-        let queryColumns = [];
-        let queryFields = [];
-        let queryValues = [];
+    async function submitInsert(){
+        const newRecord = {};
         for (const tr of rowList.querySelectorAll("tr")) {
             if (!tr.querySelector("[type2='checkbox']").checked)
                 continue;
-            const column = tr.querySelector("span").innerText;
+            const column = tr.querySelector("label").innerText;
             if (tr.getAttribute("file") == "true"){
                 let file = tr.querySelector("[type2='input']").files[0];
                 value = await readUploadedFileAsText(file);
             } else {
                 value = tr.querySelector("[type2='input']").value;
             }
-            queryColumns.push(`"${column}"`);
-            queryFields.push("?");
-            queryValues.push(value);
+            newRecord[column] = value;
         }
-        const data = await simpleQuery("{{ id }}", `insert into "{{ table }}"(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+        const data = await insertRecord("{{ id }}", "{{ table }}", newRecord);
         (data["response"] == "OK") ? alert("Record inserted") : alert("Error:\n" + data["why"]);
     }
 
     window.addEventListener("message", (e) => {
         edit = (e.data["Record"]) ? true : false;
         if (edit)
-            submitForm.setAttribute("action", "javascript:editRecord()");
+            submitForm.setAttribute("action", "javascript:submitUpdate()");
         else
-            submitForm.setAttribute("action", "javascript:insertRecord()");
+            submitForm.setAttribute("action", "javascript:submitInsert()");
         let record = (e.data["Record"]) ? e.data["Record"] : {};
-        generateForm(e.data["TableInfo"], record);
+        init(e.data["TableInfo"], record);
     })
 </script>
 </body>

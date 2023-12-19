@@ -1,9 +1,9 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<form action="javascript:updateRecord()">
+<form action="javascript:submitUpdate()">
     <table id="row-list"></table>
     <input type="submit" class="primary" value="Update">
-    <button type="button" onclick="deleteRecord()">Delete record</button>
+    <button type="button" onclick="submitDelete()">Delete record</button>
 </form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
@@ -14,11 +14,14 @@
     const rowList = document.getElementById("row-list");
     let oldRecord;
     let primaryKeyColumn;
+    const searchData = {};
+    
 
-    async function generateList(){
+    async function init(){
         const tableInfo = parent.currentTableInfo;
         const record = parent.currentRecord;
         primaryKeyColumn = getPrimaryKeyColumn(tableInfo);
+        searchData[primaryKeyColumn] = "{{ pk }}";
 
         for (const column of tableInfo)
             rowList.append(addRowField(column));
@@ -34,9 +37,7 @@
         document.dispatchEvent(new CustomEvent("generation-done"));
     }
 
-    async function updateRecord(){
-        let queryFields = [];
-        let values = [];
+    async function submitUpdate(){
         const newRecord = {}
         for (const tr of rowList.querySelectorAll("tr")) {
             if (!tr.querySelector("[type2='checkbox']").checked)
@@ -49,12 +50,10 @@
             } else {
                 value = tr.querySelector("[type2='input']").value;
             }
-            queryFields.push(`"${column}" = ?`);
-            values.push(value);
             newRecord[column] = value;
         }
-
-        const data = await simpleQuery("{{ id }}", `update "{{ table }}" set ${queryFields.join(',')} where ${primaryKeyColumn} = '{{pk}}'`, values);
+        
+        const data = await updateRecord("{{ id }}", "{{ table }}", newRecord, searchData);
         
         if (data["response"] == "Error"){
             parent.POP.alert("Error:\n" + data["why"]);
@@ -74,9 +73,9 @@
         return false;
     }
 
-    async function deleteRecord(){
+    async function submitDelete(){
         if (await parent.POP.confirm(`Are you sure you want to delete the record where "${primaryKeyColumn}" = '{{pk}}'?`)){
-            const data = await simpleQuery("{{ id }}", `delete from "{{ table }}" where "${primaryKeyColumn}" = '{{pk}}'`);
+            const data = await deleteRecord("{{ id }}", "{{ table }}", searchData);
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);
             else{
@@ -99,6 +98,6 @@
             e.remove();
     }
     
-    generateList();
+    init();
 </script>
 {% endblock %}

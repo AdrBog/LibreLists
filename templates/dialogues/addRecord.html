@@ -1,6 +1,6 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<form action="javascript:insertRow()" enctype="multipart/form-data">
+<form action="javascript:submitInsert()" enctype="multipart/form-data">
     <table id="row-list"></table>
     <input type="submit" class="primary" value="Insert">
 </form>
@@ -19,13 +19,10 @@
             rowList.append(addRowField(column));
         }
         oldRecord = getRecordFromForm(document.querySelector("form"));
-        document.dispatchEvent(new CustomEvent("generation-done"))
+        document.dispatchEvent(new CustomEvent("generation-done"));
     }
 
-    async function insertRow(){
-        let queryColumns = [];
-        let queryFields = [];
-        let queryValues = [];
+    async function submitInsert(){
         const newRecord = {};
         for (const tr of rowList.querySelectorAll("tr")) {
             if (!tr.querySelector("[type2='checkbox']").checked)
@@ -38,12 +35,9 @@
             } else {
                 value = tr.querySelector("[type2='input']").value;
             }
-            queryColumns.push(`"${column}"`);
-            queryFields.push("?");
-            queryValues.push(value);
             newRecord[column] = value;
         }
-        const data = await simpleQuery("{{ id }}", `insert into "{{ table }}"(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+        const data = await insertRecord("{{ id }}", "{{ table }}", newRecord);
         if (data["response"] == "Error"){
             parent.POP.alert("Error:\n" + data["why"]);
         }else{

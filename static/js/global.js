@@ -196,12 +196,72 @@ async function getTableColumns(database, tableName){
         let columnInfo = {}
         columnInfo["Name"] = tableInfo["output"]["records"][x]["name"];
         columnInfo["Type"] = tableInfo["output"]["records"][x]["type"];
+        columnInfo["NotNull"] = tableInfo["output"]["records"][x]["notnull"];
         columnInfo["PK"] = tableInfo["output"]["records"][x]["pk"];
         if (columnInfo["PK"] != 0 && sequence["output"]["records"].length > 0)
             columnInfo["Sequence"] = sequence["output"]["records"][0]["seq"];
         columns.push(columnInfo);
     }
     return columns;
+}
+
+/**
+ * Inserts a record into a table
+ * @param {*} database
+ * @param {*} tableName
+ * @param {*} record
+ * @returns 
+ */
+async function insertRecord(database, tableName, record){
+    let queryColumns = [];
+    let queryFields = [];
+    let queryValues = [];
+    for (const key in record) {
+        queryColumns.push(`"${key}"`);
+        queryFields.push("?");
+        queryValues.push(record[key]);
+    }
+    const data = await simpleQuery(database, `insert into "${tableName}"(${queryColumns.join(",")}) values (${queryFields.join(",")})`, queryValues);
+    return data;
+}
+
+/**
+ * Update a table record
+ * @param {*} database 
+ * @param {*} tableName 
+ * @param {*} record 
+ * @param {*} searchData 
+ * @returns 
+ */
+async function updateRecord(database, tableName, record, searchData){
+    let queryFields = [];
+    let queryValues = [];
+    let searchValues = [];
+    for (const key in record) {
+        queryFields.push(`"${key}" = ?`);
+        queryValues.push(record[key]);
+    }
+
+    for (const key in searchData)
+        searchValues.push(`"${key}" = "${searchData[key]}"`);
+
+    const data = await simpleQuery(database, `update "${tableName}" set ${queryFields.join(',')} where ${searchValues.join(' AND ')}`, queryValues);
+    return data;
+}
+
+/**
+ * Delete a table record
+ * @param {*} database 
+ * @param {*} tableName 
+ * @param {*} searchData 
+ * @returns 
+ */
+async function deleteRecord(database, tableName, searchData){
+    let searchValues = [];
+    for (const key in searchData)
+        searchValues.push(`"${key}" = "${searchData[key]}"`);
+    const data = await simpleQuery(database, `delete from "${tableName}" where ${searchValues.join(' AND ')}`);
+    return data;
 }
 
 /**

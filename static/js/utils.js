@@ -142,25 +142,30 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
         "title": "Column name", 
         "placeholder": "NAME",
         "value": name,
+        "name": "column-name",
         "required": true
     })
 
     setAttributes(columnType, {
-        "title": "The type of information to be stored, note that SQLite does not usually check if the type of information is valid."
+        "title": "The type of information to be stored, note that SQLite does not usually check if the type of information is valid.",
+        "name": "column-type"
     })
 
     setAttributes(columnPrimaryKey, {
-        "title": "Sets the PRIMARY KEY or UNIQUE contraint, this option does not usually work once the table is created."
+        "title": "Sets the PRIMARY KEY or UNIQUE contraint, this option does not usually work once the table is created.",
+        "name": "column-pk"
     })
 
     setAttributes(columnNull, {
-        "title": "Sets the NOT NULL or AUTOINCREMENT contraint, note that AUTOINCREMENT only works in INTEGER PRIMARY KEY"
+        "title": "Sets the NOT NULL or AUTOINCREMENT contraint, note that AUTOINCREMENT only works in INTEGER PRIMARY KEY",
+        "name": "column-null"
     })
 
     setAttributes(columnExtra, {
         "title": "Add extra constraints, such as DEFAULT or CHECK",
         "placeholder": "EXTRA (E.G. DEFAULT, CHECK)",
-        "list": "default-options"
+        "list": "default-options",
+        "name": "column-extra"
     })
 
     columnExtraList.id = "default-options";
@@ -209,13 +214,17 @@ function addRowField(column){
         "name": column["Name"]
     })
     
-    for (const element of [input, select, textarea])
+    for (const element of [input, select, textarea]){
         setAttributes(element, {
             "type2": "input",
             "column": column["Name"],
             "name": column["Name"],
             "id": column["Name"] 
         })
+        if (column["NotNull"] != 0)
+            element.setAttribute("required", true);
+    }
+        
 
     setAttributes(label, {
         "for": column["Name"],
@@ -295,6 +304,13 @@ function addRowField(column){
         tr.append(e);
     }
     return tr;
+}
+
+function getRecordFromTr(tr){
+    const record = {};
+    for (const cell of tr.querySelectorAll("td"))
+        record[cell.getAttribute("column")] = cell.innerText;
+    return record;
 }
 
 function getRecordFromForm(form){

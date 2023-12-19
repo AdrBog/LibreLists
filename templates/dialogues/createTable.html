@@ -2,8 +2,8 @@
 {% block dialogue %}
 <form action="javascript:createTable()">
     <div>
-        <label>Table name:</label><br>
-        <input type="text" id="table-name" required>
+        <label for="table-name">Table name:</label><br>
+        <input name="table-name" type="text" id="table-name" required>
     </div>
     <hr>
     Columns:
@@ -57,9 +57,7 @@
         else
             await parent.POP.alert("Table created");
         
-        try{
-            parent.refreshTableList();
-        }catch{}
+        parent.refreshTableList();
     }
 
     columnList.append(addColumnField("ID", "INTEGER", "PRIMARY KEY", "AUTOINCREMENT", false))
