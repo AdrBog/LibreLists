@@ -11,7 +11,7 @@
         <a href="#" onclick="insertTableDialog()">Add Table</a>
         <hr>
         <a href="/json/database/{{id}}" target="_blank">Check JSON</a>
-        <a href="#" onclick="preferences()">Config</a>
+        <a href="#" onclick="select(DATABASE_CONFIG_TABLE)">Config</a>
     </div>
 </div>
 <div class="dropdown">
@@ -106,57 +106,8 @@
     })
 
     async function refreshDatabaseName(){
-        databaseName = await getInfo(ID, "display_name");
-        DATABASE_TITLE.innerText = databaseName;  
-    }
-
-    async function preferences(){
-        let configPopup = [];
-        const data = await getJSONDatabase(ID);
-        configPopup.push({
-            "Element": "h3", "InnerText": "Configure " + databaseName
-        });
-        for (const i in data["metadata"]) {
-            configPopup.push({
-                "Element": "label", 
-                "InnerText": fancyText(i) + ":",
-                "Attributes": {
-                    "For": "config_data_" + i
-                }
-            })
-            configPopup.push({
-                "Element": "input",
-                "Attributes":{
-                    "Value": data["metadata"][i],
-                    "Id": "config_data_" + i,
-                    "Property": i
-                }
-            })
-        }
-        configPopup.push({
-            "Element": "button", 
-            "InnerText": "Apply changes",
-            "Attributes": {
-                "Return": 0,
-                "Class": "primary"
-            }
-        });
-        configPopup.push({
-            "Element": "button", 
-            "InnerText": "Discard changes",
-            "Attributes": {
-                "Return": 1
-            }
-        });
-        const props = await POP.custom(configPopup);
-        if (parseInt(props["Return"]) == 0){
-            const exportData = {};
-            for (const prop in props["Properties"]) {
-                exportData[prop] = props["Properties"][prop].split(",");
-            }
-            const res = await updateConfig("DB_METADATA", exportData, ID);
-            await POP.alert("Changes applied\nYou may need to refresh the page to see the changes.");
-        }
+        databaseName = await getDatabaseConfig(ID, "display_name", "{{ id }}");
+        DATABASE_TITLE.innerText = databaseName;
     }
 
     async function SQLiteLoop(title = "SQL Window", _default = ""){
@@ -184,13 +135,15 @@
 
     async function refreshTableList() {
         const tables = await getTables("{{ id }}");
+        const hiddenTables = await getDatabaseConfig("{{ id }}", "hidden_tables", `sqlite_sequence,${DATABASE_CONFIG_TABLE}`);
         TABLE_LIST_BUTTONS.innerHTML = "";
         for (const table of tables)
-            addToTableList(TABLE_LIST_BUTTONS, table);
+            if (!hiddenTables.split(",").includes(table))
+                addToTableList(TABLE_LIST_BUTTONS, table);
     }
 
-    function selectNone(){
-        TABLE_EDITOR.innerHTML = "Select a table to start";
+    function selectNone(message = "Select a table to start"){
+        TABLE_EDITOR.innerHTML = message;
         currentTable = null;
         currentTableInfo = null;
     }
@@ -210,16 +163,16 @@
             const tableColumns = await getTableColumns("{{ id }}", selectTable);
             currentTableCreateInfo = await getTableCreationInfo("{{ id }}", selectTable);
             currentTableInfo = tableColumns;
-
             TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
-
-            document.getElementById("table_" + selectTable).classList.add("selected");
-            
         } catch (error) {
-            const p = document.createElement("p");
-            p.innerText = "No table is selected";
-            TABLE_EDITOR.append(p);
+            selectNone("No table selected")
+            return null
         }
+
+        try{
+            document.getElementById("table_" + selectTable).classList.add("selected");
+        }catch{}
+
         currentTable = selectTable;
         
         return currentTable;
@@ -309,7 +262,11 @@
 
     refreshTableList();
     refreshDatabaseName();
-    selectNone();
+    
+    if ("{{ defaultTable }}")
+        select("{{ defaultTable }}")
+    else    
+        selectNone();
 </script>
 
 {% endblock %}

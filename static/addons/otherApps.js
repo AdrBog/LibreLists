@@ -2,7 +2,7 @@
 // the home page
 
 async function openOtherApps(){
-    window.open(await getConfig("Ohter_Apps_host"), "_blank")
+    window.open(await getLibreListsConfig("Other_Apps_host", "http://127.0.0.1:5000"), "_blank")
 }
 
 window.addEventListener("load", () => {

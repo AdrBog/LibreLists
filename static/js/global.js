@@ -17,6 +17,8 @@
 */
 
 const VALID_NAME = /^[a-zA-Z0-9_]{1,50}$/g;
+const DATABASE_CONFIG_TABLE = "database_config";
+const LIBRE_LISTS_DB = "LibreLists";
 
 /**
  * Checks if a text string is valid (no spaces or special characters).
@@ -39,16 +41,6 @@ function fancyText(string){
  */
 async function getJSONDatabase(database) {
     const res = await fetch("/json/database/" + database);
-    const data = await res.json();
-    return data;
-}
-
-/**
- * Returns information about the Libre Lists configuration file.
- * @returns 
- */
-async function getJSONConfig() {
-    const res = await fetch("/json/config");
     const data = await res.json();
     return data;
 }
@@ -118,14 +110,17 @@ async function simpleQuery(database, query, values = []) {
 }
 
 /**
- * Returns a value from the Libre Lists configuration file.
+ * Returns a value from the Libre Lists database file.
  * @param {*} attributeName 
  * @returns 
  */
-async function getConfig(attributeName){
-    const res = await fetch("/json/config");
-    const data = await res.json();
-    return data[attributeName];
+async function getLibreListsConfig(attributeName, defaultValue = ""){
+    const data = await SQLQuery(LIBRE_LISTS_DB, `select VALUE from Preferences where KEY = "${attributeName}"`);
+    try {
+        return data["output"]["records"][0]["VALUE"];
+    } catch {
+        return defaultValue;
+    }
 }
 
 /**
@@ -134,37 +129,19 @@ async function getConfig(attributeName){
  * @param {*} attributeName 
  * @returns 
  */
-async function getInfo(database, attributeName){
-    const res = await fetch("/json/database/" + database);
-    const data = await res.json();
-    return data["metadata"][attributeName];
-}
-
-async function getTableConfig(database, tableName, attributeName){
-    const res = await fetch("/json/table/" + database + "/" + tableName);
-    const data = await res.json();
-    return data["table_config"][attributeName];
+async function getDatabaseConfig(database, attributeName, defaultValue = ""){
+    const data = await SQLQuery(database, `select VALUE from ${DATABASE_CONFIG_TABLE} where KEY = "${attributeName}"`);
+    try {
+        return data["output"]["records"][0]["VALUE"];
+    } catch {
+        return defaultValue;
+    }   
 }
 
 async function getTableCreationInfo(database, tableName){
-    //const query = `select sql from sqlite_master where sql like "%create%${tableName} %" or sql like "%create%${tableName}(%"`;
     const query = `select sql from sqlite_master where sql like "%create%${tableName}_%"`;
     const res = await SQLQuery(database, query);
     return res["output"]["records"][0]["sql"];
-}
-
-async function updateConfig(context, data, database = ""){
-    const res = await fetch("/update", {
-        method: "POST",
-        body: JSON.stringify({
-            "database": database,
-            "context": context,
-            "data": data
-        }),
-        headers: { "Content-type": "application/json; charset=UTF-8" }
-    });
-    const resJSON = await res.json();
-    return resJSON;
 }
 
 /**
@@ -198,8 +175,9 @@ async function getTableColumns(database, tableName){
         columnInfo["Type"] = tableInfo["output"]["records"][x]["type"];
         columnInfo["NotNull"] = tableInfo["output"]["records"][x]["notnull"];
         columnInfo["PK"] = tableInfo["output"]["records"][x]["pk"];
-        if (columnInfo["PK"] != 0 && sequence["output"]["records"].length > 0)
-            columnInfo["Sequence"] = sequence["output"]["records"][0]["seq"];
+        if (sequence["response"] != "Error")
+            if (columnInfo["PK"] != 0 && sequence["output"]["records"].length > 0)
+                columnInfo["Sequence"] = sequence["output"]["records"][0]["seq"];
         columns.push(columnInfo);
     }
     return columns;

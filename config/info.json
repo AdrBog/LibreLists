@@ -1,6 +1,0 @@
-{
-    "display_name": ["My Database"],
-    "hidden_tables": [
-        "sqlite_sequence"
-    ]
-}

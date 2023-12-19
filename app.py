@@ -8,10 +8,9 @@ app = Flask(__name__)
 CORS(app)
 PROJECT_DIR = "projects"
 CONFIG_DIR = "config"
-CONFIG_FILE = "config.json"
 ADDONS_FILE = "addons.json"
-TABLE_CONFIG_FILE = "tables.json"
-INFO_FILE = "info.json"
+LIBRE_LISTS_DB = "LibreLists"
+DATABASE_CONFIG_TABLE = "database_config"
 TABLE_DEFAULT_CONFIG = {}
 VERSION = "0.3.1"
 
@@ -26,18 +25,43 @@ def get_db_connection(id):
     conn.row_factory = sqlite3.Row
     return conn
 
+def setDefaultLibreListsConfig():
+    os.makedirs(f"{PROJECT_DIR}/{LIBRE_LISTS_DB}")
+    conn = get_db_connection(LIBRE_LISTS_DB)
+    cur = conn.cursor()
+    cur.executescript(f"""
+        create table Preferences(KEY TEXT PRIMARY KEY NOT NULL,VALUE TEXT);
+        insert into Preferences values ( 'Other_Apps_host', 'http://127.0.0.1:5000' ); 
+    """)
+    cur.executescript(f"""
+        create table {DATABASE_CONFIG_TABLE}(KEY TEXT PRIMARY KEY NOT NULL,VALUE TEXT);
+        insert into {DATABASE_CONFIG_TABLE} values ( 'display_name', 'Libre Lists database' ); 
+    """)
+
+def setDefaultDatabaseConfig(id):
+    conn = get_db_connection(id)
+    cur = conn.cursor()
+    cur.executescript(f""" 
+        create table {DATABASE_CONFIG_TABLE}( KEY TEXT PRIMARY KEY NOT NULL,VALUE TEXT);
+        insert into {DATABASE_CONFIG_TABLE} values ( 'display_name', 'My Database');
+        insert into {DATABASE_CONFIG_TABLE} values ( 'hidden_tables', 'sqlite_sequence,{DATABASE_CONFIG_TABLE}'); 
+    """)
+
 # ROUTES
 
 @app.route('/')
 def openfile():
     if not os.path.exists(PROJECT_DIR):
         os.makedirs(PROJECT_DIR)
+    if not os.path.exists(f"{PROJECT_DIR}/{LIBRE_LISTS_DB}"):
+        setDefaultLibreListsConfig()
     databases = os.listdir(PROJECT_DIR)
-    return render_template("index.html", databases=sorted(databases), ver=VERSION, addons=updateAddons())
+    return render_template("index.html", databases=sorted(databases), ver=VERSION, addons=updateAddons(), libre_lists_database=LIBRE_LISTS_DB)
 
 @app.route('/edit/<id>')
 def edit(id):
-    return render_template("edit.html", id=id, ver=VERSION, addons=updateAddons())
+    t = request.args.get('t', default = "", type = str)
+    return render_template("edit.html", id=id, ver=VERSION, addons=updateAddons(), defaultTable=t)
 
 @app.route('/remove/<id>')
 def remove(id):
@@ -48,8 +72,7 @@ def remove(id):
 def create(id):
     if not os.path.exists(f"{PROJECT_DIR}/{id}"):
         os.makedirs(f"{PROJECT_DIR}/{id}")
-        shutil.copyfile(f"{CONFIG_DIR}/{INFO_FILE}", f"{PROJECT_DIR}/{id}/{INFO_FILE}")
-        shutil.copyfile(f"{CONFIG_DIR}/{TABLE_CONFIG_FILE}", f"{PROJECT_DIR}/{id}/{TABLE_CONFIG_FILE}")
+        setDefaultDatabaseConfig(id)
     return redirect("/", code=302)
 
 @app.route('/exec/<id>', methods=('GET', 'POST'))
@@ -90,20 +113,12 @@ def database_exec(id):
 
 @app.route('/json/database/<id>', methods=('GET', 'POST'))
 def jsonDatabase(id):
-    data = {"metadata" : {}, "tables": []}
-
-    with open(f"{PROJECT_DIR}/{id}/{INFO_FILE}") as f:
-        info = json.load(f)
-    
-    for infoName in info:
-        data["metadata"].update({infoName : info[infoName]})
-
+    data = {"tables": []}
     conn = get_db_connection(id)
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     for table in cursor.fetchall():
-        if table[0] not in data["metadata"]["hidden_tables"]:
-            data["tables"].append(table[0])
+        data["tables"].append(table[0])
     conn.close()
     data["tables"] = sorted(data["tables"])
     return jsonify(data)
@@ -127,32 +142,6 @@ def jsonTable(id, table):
         return jsonify(records)
     except sqlite3.Error as error:
         return jsonify(records)
-
-@app.route('/json/config', methods=('GET', 'POST'))
-def jsonConfig():
-    with open(f"{CONFIG_DIR}/{CONFIG_FILE}") as f:
-        return jsonify(json.load(f))
-
-@app.route('/update', methods=['POST'])
-def update():
-    jsonRequest = request.get_json()
-    if jsonRequest["context"] == "DB_METADATA":
-        with open(f"{PROJECT_DIR}/{jsonRequest['database']}/{INFO_FILE}", "r+") as f:
-            data = json.load(f)
-            for config in jsonRequest["data"]:
-                data[config] = jsonRequest["data"][config]
-            f.seek(0)
-            json.dump(data, f)
-            f.truncate()
-    elif jsonRequest["context"] == "LL_CONFIG":
-        with open(f"{CONFIG_DIR}/{CONFIG_FILE}", "r+") as f:
-            data = json.load(f)
-            for config in jsonRequest["data"]:
-                data[config] = jsonRequest["data"][config]
-            f.seek(0)
-            json.dump(data, f)
-            f.truncate()
-    return {"response": "OK"}
 
 @app.route('/dialogue/<page>/<id>', methods=['GET'])
 @app.route('/dialogue/<page>/<id>/<table>', methods=['GET'])
