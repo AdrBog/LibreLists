@@ -42,9 +42,9 @@
     <span id="column-menu-name" style="padding-bottom: 0px; font-weight: bold;"><b>Name</b></span>
     <span id="column-menu-type" style="font-size: 12px;">Type</span>
     <hr>
-    <a href="#" onclick="SQLiteOnce('Rename Column', `alter table ${currentTable}\nrename column '${selectedColumn}' to `)">Rename Column</a>
+    <a href="#" onclick="SQLiteOnce('Rename Column', `alter table '${currentTable}'\nrename column '${selectedColumn}' to `)">Rename Column</a>
     <hr>
-    <a href="#" onclick="SQLiteOnce('Delete Column', `alter table ${currentTable}\ndrop column '${selectedColumn}'`)" style="color: red;">Delete Column</a>
+    <a href="#" onclick="SQLiteOnce('Delete Column', `alter table '${currentTable}'\ndrop column '${selectedColumn}'`)" style="color: red;">Delete Column</a>
 </div>
 
 <div id="table-list" class="table-list">
@@ -63,7 +63,7 @@
 {% endfor %}
 <script>
     var POP = new Pops();
-    const ID = "{{ id }}";
+    const DATABASE_ID = "{{ id }}";
     const VERSION = "{{ ver }}";
     const TABLE_EDITOR = document.getElementById("table-editor");
     const TABLE_LIST = document.getElementById("table-list");
@@ -106,7 +106,7 @@
     })
 
     async function refreshDatabaseName(){
-        databaseName = await getDatabaseConfig(ID, "display_name", "{{ id }}");
+        databaseName = await getDatabaseConfig(DATABASE_ID, "display_name", "{{ id }}");
         DATABASE_TITLE.innerText = databaseName;
     }
 
@@ -265,7 +265,7 @@
     
     if ("{{ defaultTable }}")
         select("{{ defaultTable }}")
-    else    
+    else
         selectNone();
 </script>
 

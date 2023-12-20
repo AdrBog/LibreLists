@@ -111,11 +111,11 @@ async function simpleQuery(database, query, values = []) {
 
 /**
  * Returns a value from the Libre Lists database file.
- * @param {*} attributeName 
+ * @param {*} key 
  * @returns 
  */
-async function getLibreListsConfig(attributeName, defaultValue = ""){
-    const data = await SQLQuery(LIBRE_LISTS_DB, `select VALUE from Preferences where KEY = "${attributeName}"`);
+async function getLibreListsConfig(key, defaultValue = ""){
+    const data = await SQLQuery(LIBRE_LISTS_DB, `select VALUE from Preferences where KEY = "${key}"`);
     try {
         return data["output"]["records"][0]["VALUE"];
     } catch {
@@ -126,16 +126,39 @@ async function getLibreListsConfig(attributeName, defaultValue = ""){
 /**
  * Returns a value from a database information file.
  * @param {*} database 
- * @param {*} attributeName 
+ * @param {*} key 
  * @returns 
  */
-async function getDatabaseConfig(database, attributeName, defaultValue = ""){
-    const data = await SQLQuery(database, `select VALUE from ${DATABASE_CONFIG_TABLE} where KEY = "${attributeName}"`);
+async function getDatabaseConfig(database, key, defaultValue = ""){
+    const data = await SQLQuery(database, `select VALUE from ${DATABASE_CONFIG_TABLE} where KEY = "${key}"`);
     try {
         return data["output"]["records"][0]["VALUE"];
     } catch {
         return defaultValue;
     }   
+}
+
+/**
+ * Create or replace a database configuration key
+ * @param {*} key 
+ * @param {*} value 
+ * @returns 
+ */
+async function setLibreListsConfig(key, value){
+    const data = await SQLQuery(LIBRE_LISTS_DB, `insert or replace into Preferences values ("${key}", "${value}")`);
+    return data;
+}
+
+/**
+ * Create or replace a database configuration key
+ * @param {*} database 
+ * @param {*} key 
+ * @param {*} value 
+ * @returns 
+ */
+async function setDatabaseConfig(database, key, value){
+    const data = await SQLQuery(database, `insert or replace into ${DATABASE_CONFIG_TABLE} values ("${key}", "${value}")`);
+    return data;
 }
 
 async function getTableCreationInfo(database, tableName){
