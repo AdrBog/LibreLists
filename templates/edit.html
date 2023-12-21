@@ -32,7 +32,7 @@
         <i class="fa fa-caret-down"></i>
     </button>
     <div id="database-dropdown" class="dropdown-content">
-        <a href="#" onclick="SQLiteLoop()">SQL Window</a>
+        <a href="#" onclick="SQLWindow()">SQL Window</a>
     </div>
 </div>
 {% endblock %}
@@ -42,9 +42,9 @@
     <span id="column-menu-name" style="padding-bottom: 0px; font-weight: bold;"><b>Name</b></span>
     <span id="column-menu-type" style="font-size: 12px;">Type</span>
     <hr>
-    <a href="#" onclick="SQLiteOnce('Rename Column', `alter table '${currentTable}'\nrename column '${selectedColumn}' to `)">Rename Column</a>
+    <a href="#" onclick="renameColumnDialog(currentTable, selectedColumn, currentColumnNames)">Rename Column</a>
     <hr>
-    <a href="#" onclick="SQLiteOnce('Delete Column', `alter table '${currentTable}'\ndrop column '${selectedColumn}'`)" style="color: red;">Delete Column</a>
+    <a href="#" onclick="deleteColumnDialog(currentTable, selectedColumn, currentColumnNames)" style="color: red;">Delete Column</a>
 </div>
 
 <div id="table-list" class="table-list">
@@ -75,11 +75,13 @@
     var currentTableInfo;
     var currentTableCreateInfo;
     var currentRecord;
+    var currentColumnNames;
     var selectedColumn;
     var clickedElement;
     var databaseName;
     var idCol;
     var filter = "";
+    var canSelect = true;
 
     TABLE_EDITOR.addEventListener("click", (e) => {
         COLUMN_MENU.style.visibility = "hidden";
@@ -110,7 +112,7 @@
         DATABASE_TITLE.innerText = databaseName;
     }
 
-    async function SQLiteLoop(title = "SQL Window", _default = ""){
+    async function SQLWindow(title = "SQL Window", _default = ""){
         const query = await POP.sqlwindow(title, _default);
         if (parseInt(query["Return"]) == 0){
             const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
@@ -119,17 +121,7 @@
             else
                 await POP.output(res["output"]);
             select(currentTable);
-            SQLiteLoop(title, query["Properties"]["Query"]);
-        }
-    }
-
-    async function SQLiteOnce(title = "", _default = ""){
-        const query = await POP.sqlwindow(title, _default);
-        if (parseInt(query["Return"]) == 0){
-            const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
-            if (res["response"] == "Error")
-                await POP.alert("ERROR \n" + res["why"]);
-            select(currentTable);
+            SQLWindow(title, query["Properties"]["Query"]);
         }
     }
 
@@ -149,6 +141,8 @@
     }
 
     async function select(tableName) {
+        if (!canSelect) return
+        canSelect = false;
         const selectTable = tableName;
         const table = document.createElement("table");
         const tr = document.createElement("tr");
@@ -159,13 +153,16 @@
                 table.classList.remove("selected");
 
         try {
+            const columns = await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*");
             const records = await getTableRecords("{{ id }}", selectTable, filter);
-            const tableColumns = await getTableColumns("{{ id }}", selectTable);
+            const tableColumns = await getTableColumns("{{ id }}", selectTable, columns);
+            TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
             currentTableCreateInfo = await getTableCreationInfo("{{ id }}", selectTable);
             currentTableInfo = tableColumns;
-            TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
+            currentColumnNames = getTableColumnsNames(TABLE_EDITOR.querySelector("table"))
         } catch (error) {
             selectNone("No table selected")
+            canSelect = true;
             return null
         }
 
@@ -174,6 +171,7 @@
         }catch{}
 
         currentTable = selectTable;
+        canSelect = true;
         
         return currentTable;
     }
@@ -230,14 +228,44 @@
     async function deleteTableDialog(tableName){
         if (!someTableIsSelected())
             return;
-        
         if (await POP.confirm("Are you sure you want to delete table \"" + tableName + "\"?")){
             const res = await SQLQuery("{{ id }}", `DROP TABLE IF EXISTS "${tableName}"`);
             if (res["response"] == "OK"){
                 document.getElementById("table_" + tableName).remove();
                 selectNone();
-            } else {
-                return null;
+            }
+        }
+    }
+
+    async function renameColumnDialog(tableName, column, columnNames){
+        const newName = await POP.prompt("Enter new name", "text", column);
+        if (!isValid(newName, VALID_NAME_WITH_SPACES)){
+            await POP.alert("Name is not valid")
+            return
+        } else if (!newName){
+            return
+        }
+        const res = await SQLQuery("{{ id }}", `alter table '${tableName}'\nrename column '${column}' to '${newName}'`);
+        if (res["response"] == "OK"){
+            if (await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*") != "*"){
+                columnNames[columnNames.indexOf(column)] = newName
+                await setDatabaseConfig("{{ id }}", `table_${tableName}_columns`, columnNames);
+            }  
+            select(tableName)
+        } else {
+            POP.alert("ERROR \n" + res["why"]);
+        }
+    }
+
+    async function deleteColumnDialog(tableName, column, columnNames){
+        if (await POP.confirm(`Are you sure you want to delete column "${column}"?`)){
+            const res = await SQLQuery("{{ id }}", `alter table '${tableName}' drop column '${column}'`);
+            if (res["response"] == "OK"){
+                if (await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*") != "*"){
+                    columnNames = columnNames.filter(e => e !== column);
+                    await setDatabaseConfig("{{ id }}", `table_${tableName}_columns`, columnNames);
+                }  
+                select(tableName)
             }
         }
     }

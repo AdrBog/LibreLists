@@ -3,7 +3,7 @@
 <form action="javascript:createTable()">
     <div>
         <label for="table-name">Table name:</label><br>
-        <input name="table-name" type="text" id="table-name" required>
+        <input name="table-name" type="text" id="table-name" pattern="^(?!\s)[a-zA-Z0-9_ ]{1,50}(?&lt;!\s)$" required>
     </div>
     <hr>
     Columns:

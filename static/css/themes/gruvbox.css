@@ -1,0 +1,29 @@
+:root{
+    --000: rgba(255, 255, 255, 0.2);
+    --ddd: #272727;
+
+    --bg: #282828;
+    --fg: #ebdbb2;
+    --bg-2: #32302f;
+    --fg-2: #ebdbb2;
+
+    --a: #a8b45d;
+    
+    --primary-bg: #a9b665;
+    --primary-fg: #32312b;
+    
+    --toolbar-bg:#1d2021;
+    --toolbar-fg:#ebdbb2;
+
+    --white-005: rgba(0, 0, 0, 0.05);
+    --white-01: rgba(0, 0, 0, 0.1);
+    --white-02: rgba(0, 0, 0, 0.2);
+    --white-05: rgba(0, 0, 0, 0.5);
+
+    --black-005: rgba(255, 255, 255, 0.05);
+    --black-01: rgba(255, 255, 255, 0.1);
+    --black-02: rgba(255, 255, 255, 0.2);
+    --black-05: rgba(255, 255, 255, 0.5);
+
+    --selected: rgba(64, 70, 36, 0.6);
+}

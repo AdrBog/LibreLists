@@ -1,16 +1,17 @@
 CHANGELOG
 V 0.3.1
 	- New data type URLDATA (NOT BLOB): Now you can save binary files as URL data in your database
-	- New addons: automation.js to execute commands when creating, editing or deleting a record
+	- New add-on: automation.js to execute commands when creating, editing or deleting a record
+	- New add-on: reorderColumns.js to help with column reordering
 V 0.3.0
-	- New addons: fancyTables.js to make tables look cooler
+	- New add-on: fancyTables.js to make tables look cooler
 	- Now you can create tables and columns with spaces in their names
 	- New data types and data validation
 	- Dark theme added
 V 0.2.2
-	- New addon: choices.js to generates datalists when the CHECK (X IN (A, B, ...)) constraint is detected.
+	- New add-on: choices.js to generates datalists when the CHECK (X IN (A, B, ...)) constraint is detected.
 V 0.2.1
-	- New addon: keyboard.js to edit keyboard shortcuts in Libre Lists
+	- New add-on: keyboard.js to edit keyboard shortcuts in Libre Lists
 	- Implementation of the <dialog> tag for popup handling
 	- Improved the SQL Window, now you can use tabs without losing the textarea focus.
 V 0.2.0

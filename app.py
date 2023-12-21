@@ -128,8 +128,9 @@ def jsonTable(id, table):
     records = []
     try:
         filters = request.args.get('f', type = str)
+        columns = request.args.get('c', default="*", type = str)
         conn = get_db_connection(id)
-        rows = conn.execute(f'SELECT * FROM "{table}" {filters}').fetchall()
+        rows = conn.execute(f'SELECT {columns} FROM "{table}" {filters}').fetchall()
         conn.close()
         for row in rows:
             item = {}

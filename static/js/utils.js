@@ -143,6 +143,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
         "placeholder": "NAME",
         "value": name,
         "name": "column-name",
+        "pattern": "^(?!\\s)[a-zA-Z0-9_ ]{1,50}(?<!\\s)$",
         "required": true
     })
 
@@ -334,4 +335,10 @@ function compareRecords(oldRecord, newRecord){
             record[key] = oldRecord[key]
     }
     return record;
+}
+
+function getTableColumnsNames(table){
+    return Array.from(table.querySelectorAll("th")).map((x) => {
+        return x.innerText
+    })
 }

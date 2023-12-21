@@ -24,9 +24,13 @@
         try{
             if (data["response"] == "Error")
                 parent.POP.alert("Error:\n" + data["why"]);
-            else
+            else{
                 parent.POP.alert("Column added");
-            parent.select(parent.currentTable);
+                if (await getDatabaseConfig("{{ id }}", "table_{{ table }}_columns", "*") != "*")
+                    await setDatabaseConfig("{{ id }}", "table_{{ table }}_columns", parent.currentColumnNames.join(",") + "," + name);
+                parent.select("{{ table }}");
+            }  
+            
         }catch{}
     }
 

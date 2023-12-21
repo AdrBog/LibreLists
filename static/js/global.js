@@ -17,6 +17,7 @@
 */
 
 const VALID_NAME = /^[a-zA-Z0-9_]{1,50}$/g;
+const VALID_NAME_WITH_SPACES = /^(?!\s)[a-zA-Z0-9_ ]{1,50}(?<!\s)$/g;
 const DATABASE_CONFIG_TABLE = "database_config";
 const LIBRE_LISTS_DB = "LibreLists";
 
@@ -25,9 +26,9 @@ const LIBRE_LISTS_DB = "LibreLists";
  * @param {*} string 
  * @returns 
  */
-function isValid(string){
-    VALID_NAME.lastIndex = 0;
-    return VALID_NAME.test(string);
+function isValid(string, regex = VALID_NAME){
+    regex.lastIndex = 0;
+    return regex.test(string);
 }
 
 function fancyText(string){
@@ -62,8 +63,8 @@ async function getTables(database) {
  * @param {*} filter 
  * @returns 
  */
-async function getTableRecords(database, tableName, filter) {
-    const res = await fetch("/json/table/" + database + "/" + tableName + "?f=" + filter);
+async function getTableRecords(database, tableName, filter, columns = "*") {
+    const res = await fetch(`/json/table/${database}/${tableName}?f=${filter}&c=${columns}`);
     const data = await res.json();
     return data;
 }
@@ -188,22 +189,29 @@ function tableToCSV(table){
  * @param {*} tableName 
  * @returns 
  */
-async function getTableColumns(database, tableName){
-    const tableInfo = await SQLQuery(database, `pragma table_info('${tableName}')`)
+async function getTableColumns(database, tableName, columns = "*"){
+    const tableInfo = await SQLQuery(database, `pragma table_info('${tableName}')`);
     const sequence = await SQLQuery(database, `select * from sqlite_sequence where name='${tableName}'`);
-    let columns = []
-    for (const x in tableInfo["output"]["records"]){
+    let columnArray = []
+    let columnList = (columns == "*") ? tableInfo["output"]["records"] : columns.split(",").map((x) => {
+        return tableInfo["output"]["records"].filter((e) => {
+            return e["name"].toLowerCase() == x.toLowerCase()
+        })[0]
+    })
+    columnList = columnList.filter(function(x) { return x !== undefined; })
+    for (const x in columnList){
+        if (!columnList[x]) continue;
         let columnInfo = {}
-        columnInfo["Name"] = tableInfo["output"]["records"][x]["name"];
-        columnInfo["Type"] = tableInfo["output"]["records"][x]["type"];
-        columnInfo["NotNull"] = tableInfo["output"]["records"][x]["notnull"];
-        columnInfo["PK"] = tableInfo["output"]["records"][x]["pk"];
+        columnInfo["Name"] = columnList[x]["name"];
+        columnInfo["Type"] = columnList[x]["type"];
+        columnInfo["NotNull"] = columnList[x]["notnull"];
+        columnInfo["PK"] = columnList[x]["pk"];
         if (sequence["response"] != "Error")
             if (columnInfo["PK"] != 0 && sequence["output"]["records"].length > 0)
                 columnInfo["Sequence"] = sequence["output"]["records"][0]["seq"];
-        columns.push(columnInfo);
+        columnArray.push(columnInfo);
     }
-    return columns;
+    return columnArray;
 }
 
 /**
