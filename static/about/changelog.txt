@@ -3,6 +3,7 @@ V 0.3.1
 	- New data type URLDATA (NOT BLOB): Now you can save binary files as URL data in your database
 	- New add-on: automation.js to execute commands when creating, editing or deleting a record
 	- New add-on: reorderColumns.js to help with column reordering
+	- Responsive UI for desktop and mobile
 V 0.3.0
 	- New add-on: fancyTables.js to make tables look cooler
 	- Now you can create tables and columns with spaces in their names

@@ -13,7 +13,12 @@
     <div class="editor">
         <nav class="navbar" id="navbar">
             <a href="/" class="home">Libre Lists</a>
-            {% block navbar_content %}{% endblock %}
+            <div class="desktop">
+                {% block navbar_content %}{% endblock %}
+            </div>
+            <div class="mobile">
+                {% block navbar_content_mobile %}{% endblock %}
+            </div>
         </nav>
         <div class="container">
             <noscript>

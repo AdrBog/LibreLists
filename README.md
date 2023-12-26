@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./static/logo.svg">
+  <img src="./res/6.png">
   <h1>Libre Lists</h1>
   <p>Minimalistic Free and Open Source alternative to Microsoft Lists written in Python and Flask.</p>
 </div>
@@ -10,7 +10,20 @@
 
 Create simple SQLite databases with Libre Lists, then use them in your [Other Apps](https://github.com/AdrBog/OtherApps) applications.
 
+## Features
+- [x] No Ads
+- [x] No Tracking
+- [x] Lightweight
+- [x] No account needed
+- [x] Self-hosting
+- [x] Responsive UI
+- [x] Unrestricted databases sizes
+- [x] Themes
+- [x] Addons
+
 ## Installation
+Easily install Libre Lists on your server
+
 You need to have Python with virtualenv and Git installed
 
 Install flask-cors to avoid CORS issues when connecting Other Apps with Libre Lists

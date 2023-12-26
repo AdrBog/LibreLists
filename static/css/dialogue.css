@@ -1,5 +1,11 @@
 @import url('themes/light.css');
 
+@media screen and ((max-width: 600px) or (pointer:coarse)) {
+  input, select, textarea, button {
+    width: 100%;
+  }
+}
+
 body{
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg);

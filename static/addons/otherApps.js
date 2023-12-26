@@ -10,5 +10,5 @@ window.addEventListener("load", () => {
     a.href = "#";
     a.setAttribute("onclick", "openOtherApps()");
     a.innerText = "Other Apps"
-    document.getElementById("navbar").appendChild(a);
+    document.querySelector(".navbar .desktop").appendChild(a);
 })

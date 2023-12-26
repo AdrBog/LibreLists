@@ -26,7 +26,7 @@ function extractMatches(check){
 function addDatalists(datalists){
     for (const datalist of datalists) {
         const keyName = Object.keys(datalist)[0];
-        const element = document.querySelector(`input[column="${keyName}"]`);
+        const element = document.querySelector(`input[column=${keyName}]`);
         const listID = "list_for_" + keyName;
         const list = document.createElement("datalist");
         list.id = listID;

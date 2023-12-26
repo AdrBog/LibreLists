@@ -8,6 +8,14 @@
 <a href="#" onclick="about()">About</a>
 {% endblock %}
 
+{% block navbar_content_mobile %}
+<!-- This menu is visible in mobile display  -->
+<button class="icon" onclick="newDatabase()">󰆺</button>
+<button class="icon" onclick="window.location.replace('/edit/{{ libre_lists_database }}?t=Preferences')"></button>
+<button class="icon" onclick="about()"></button>
+{% endblock %}
+
+
 {% block content %}
     <div class="index-list">
     <span style="font-size: 32px;margin: 16px 16px 0 16px;">List of databases</span>

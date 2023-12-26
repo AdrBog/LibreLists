@@ -4,9 +4,7 @@
 
 {% block navbar_content %}
 <div class="dropdown">
-    <button class="dropbtn">Database
-        <i class="fa fa-caret-down"></i>
-    </button>
+    <button class="dropbtn">Database</button>
     <div id="database-dropdown" class="dropdown-content">
         <a href="#" onclick="insertTableDialog()">Add Table</a>
         <hr>
@@ -15,9 +13,7 @@
     </div>
 </div>
 <div class="dropdown">
-    <button class="dropbtn">Current table
-        <i class="fa fa-caret-down"></i>
-    </button>
+    <button class="dropbtn">Current table</button>
     <div id="table-dropdown" class="dropdown-content">
         <a href="#" id="navbar-add-column" onclick="addColumnDialog()">Add Column</a>
         <a href="#" id="navbar-add-row" onclick="addRecordDialog()">Add Record</a>
@@ -28,14 +24,21 @@
     </div>
 </div>
 <div class="dropdown">
-    <button class="dropbtn">SQLite
-        <i class="fa fa-caret-down"></i>
-    </button>
+    <button class="dropbtn">SQLite</button>
     <div id="database-dropdown" class="dropdown-content">
         <a href="#" onclick="SQLWindow()">SQL Window</a>
     </div>
 </div>
 {% endblock %}
+
+{% block navbar_content_mobile %}
+<!-- This menu is visible in mobile display  -->
+<button class="icon" onclick="addRecordDialog()"></button>
+<button class="icon" onclick="select(DATABASE_CONFIG_TABLE)"></button>
+<button class="icon" onclick="deleteTableDialog(currentTable)">󰗩</button>
+<button class="icon" onclick="SQLWindow()"></button>
+{% endblock %}
+
 
 {% block content %}
 <div id="column-menu" class="rclick-menu" style="visibility: hidden;">
@@ -53,8 +56,10 @@
     <hr>
     <div id="table-list-buttons"></div>
 </div>
-<div id="table-editor" class="table-editor unselectable">
-</div>
+
+<button class="icon" onclick="TABLE_LIST.classList.toggle('collapsed')"></button>
+
+<div id="table-editor" class="main table-editor unselectable"></div>
 
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
@@ -157,6 +162,9 @@
             const records = await getTableRecords("{{ id }}", selectTable, filter);
             const tableColumns = await getTableColumns("{{ id }}", selectTable, columns);
             TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
+            TABLE_EDITOR.querySelector("table tr").insertAdjacentHTML("beforeend", `
+                <div onclick="addColumnDialog()" style="min-width: 64px; text-align: center;">+</div>
+            `)
             currentTableCreateInfo = await getTableCreationInfo("{{ id }}", selectTable);
             currentTableInfo = tableColumns;
             currentColumnNames = getTableColumnsNames(TABLE_EDITOR.querySelector("table"))
@@ -291,10 +299,13 @@
     refreshTableList();
     refreshDatabaseName();
     
-    if ("{{ defaultTable }}")
+    if ("{{ defaultTable }}"){
         select("{{ defaultTable }}")
-    else
+        TABLE_LIST.classList.toggle('collapsed')
+    }
+    else{
         selectNone();
+    }
 </script>
 
 {% endblock %}
