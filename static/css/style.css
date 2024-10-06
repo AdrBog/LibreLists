@@ -297,6 +297,17 @@ input, textarea, select{
   content: "";
 }
 
+.table-editor table tr, dialog {
+  opacity: 0;
+  animation: fadeIn 0.2s forwards;
+}
+
+@keyframes fadeIn {
+  to {
+      opacity: 1; /* End fully opaque */
+  }
+}
+
 .table-editor table tr:nth-child(even){
   box-shadow: inset 0 0 1000px 1000px var(--black-005);
 }

@@ -132,7 +132,7 @@ def jsonTable(id, table):
         limit = request.args.get('limit', default=100, type=int)
         offset = request.args.get('offset', default=0, type=int)
         conn = get_db_connection(id)
-        # TODO: Remplace this query with safer code
+        # TODO: Replace this query with safer code
         #query = "SELECT ? FROM ? LIMIT ?,?"
         rows = conn.execute(f'SELECT {columns} FROM "{table}" {filters} LIMIT {limit} OFFSET {offset}').fetchall()
         conn.close()
