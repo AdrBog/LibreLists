@@ -129,8 +129,12 @@ def jsonTable(id, table):
     try:
         filters = request.args.get('f', type = str)
         columns = request.args.get('c', default="*", type = str)
+        limit = request.args.get('limit', default=100, type=int)
+        offset = request.args.get('offset', default=0, type=int)
         conn = get_db_connection(id)
-        rows = conn.execute(f'SELECT {columns} FROM "{table}" {filters}').fetchall()
+        # TODO: Remplace this query with safer code
+        #query = "SELECT ? FROM ? LIMIT ?,?"
+        rows = conn.execute(f'SELECT {columns} FROM "{table}" {filters} LIMIT {limit} OFFSET {offset}').fetchall()
         conn.close()
         for row in rows:
             item = {}

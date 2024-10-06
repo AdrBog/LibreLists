@@ -63,8 +63,8 @@ async function getTables(database) {
  * @param {*} filter 
  * @returns 
  */
-async function getTableRecords(database, tableName, filter, columns = "*") {
-    const res = await fetch(`/json/table/${database}/${tableName}?f=${filter}&c=${columns}`);
+async function getTableRecords(database, tableName, filter, columns = "*", limit = 100, offset = 0) {
+    const res = await fetch(`/json/table/${database}/${tableName}?f=${filter}&c=${columns}&limit=${limit}&offset=${offset}`);
     const data = await res.json();
     return data;
 }

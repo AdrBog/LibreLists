@@ -14,7 +14,7 @@
     let oldRecord;
 
     async function generateList(){
-        const columnList = parent.currentTableInfo;
+        const columnList = parent.tableColumns;
         for (const column of columnList) {
             rowList.append(addRowField(column));
         }

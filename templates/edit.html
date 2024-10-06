@@ -50,17 +50,16 @@
     <a href="#" onclick="deleteColumnDialog(currentTable, selectedColumn, currentColumnNames)" style="color: red;">Delete Column</a>
 </div>
 
-<div id="table-list" class="table-list">
+<div id="tableList" class="table-list">
     <span id='database-title' class='database-title'>{{ id }}</span>
     <button onclick="insertTableDialog()">+ Add table</button>
     <hr>
     <div id="table-list-buttons"></div>
 </div>
 
-<button class="icon" onclick="TABLE_LIST.classList.toggle('collapsed')"></button>
+<button class="icon" onclick="tableList.classList.toggle('collapsed')"></button>
 
-<div id="table-editor" class="main table-editor unselectable"></div>
-
+<div id="tableEditor" class="main table-editor unselectable"></div>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 {% for addon in addons["edit"] %}
@@ -70,8 +69,6 @@
     var POP = new Pops();
     const DATABASE_ID = "{{ id }}";
     const VERSION = "{{ ver }}";
-    const TABLE_EDITOR = document.getElementById("table-editor");
-    const TABLE_LIST = document.getElementById("table-list");
     const TABLE_LIST_BUTTONS = document.getElementById("table-list-buttons");
     const COLUMN_MENU = document.getElementById("column-menu");
     const DATABASE_TITLE = document.getElementById("database-title");
@@ -87,8 +84,13 @@
     var idCol;
     var filter = "";
     var canSelect = true;
+    var limit = 100;
+    var offset = 0;
+    var columns;
+    var tableColumns;
+    var tableElement;
 
-    TABLE_EDITOR.addEventListener("click", (e) => {
+    tableEditor.addEventListener("click", (e) => {
         COLUMN_MENU.style.visibility = "hidden";
         switch(e.target.nodeName.toLowerCase()){
             case "th":
@@ -102,15 +104,7 @@
                 currentRecord = getRecordFromTr(e.target.parentElement);
                 break;    
         }
-    })
-
-    TABLE_EDITOR.addEventListener("dblclick", (e) => {
-        switch (e.target.nodeName.toLowerCase()) {
-            case "td":
-                editRecordDialog(getRowPrimaryKey(e.target));
-                break;
-        }
-    })
+    });
 
     async function refreshDatabaseName(){
         databaseName = await getDatabaseConfig(DATABASE_ID, "display_name", "{{ id }}");
@@ -140,49 +134,66 @@
     }
 
     function selectNone(message = "Select a table to start"){
-        TABLE_EDITOR.innerHTML = message;
+        tableEditor.innerHTML = message;
         currentTable = null;
         currentTableInfo = null;
     }
 
     async function select(tableName) {
-        if (!canSelect) return
-        canSelect = false;
+        currentTable = tableName;
+        offset = 0;
+        columns = await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*");
+        tableColumns = await getTableColumns("{{ id }}", currentTable, columns);
+        loadDataToTable(tableEditor, currentTable);
+
+        try{
+            document.getElementById("table_" + currentTable).classList.add("selected");
+        }catch{}
+
+        return currentTable;
+    }
+
+
+    async function loadDataToTable(node, tableName){
         const selectTable = tableName;
-        const table = document.createElement("table");
-        const tr = document.createElement("tr");
-        TABLE_EDITOR.innerHTML = "";
+        node.innerHTML = "";
         COLUMN_MENU.style.visibility = "hidden";
 
-        for (const table of TABLE_LIST.getElementsByTagName("button")) 
+        for (const table of tableList.getElementsByTagName("button")) 
                 table.classList.remove("selected");
 
         try {
-            const columns = await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*");
-            const records = await getTableRecords("{{ id }}", selectTable, filter);
-            const tableColumns = await getTableColumns("{{ id }}", selectTable, columns);
-            TABLE_EDITOR.appendChild(generateTable(records, tableColumns));
-            TABLE_EDITOR.querySelector("table tr").insertAdjacentHTML("beforeend", `
+            tableElement = document.createElement("table");
+            node.appendChild(tableElement)
+            tableElement.parentNode.addEventListener("scroll", () => {
+                const scrollTop = tableEditor.scrollTop;
+                const scrollHeight = tableEditor.scrollHeight;
+                const clientHeight = tableEditor.clientHeight;
+                const nearBottomThreshold = 200;
+                const isNearBottom = scrollTop + clientHeight >= scrollHeight - nearBottomThreshold;
+                if (isNearBottom){
+                    offset += limit;
+                    addTableChunk();
+                }
+            });
+            tableElement.appendChild(generateTableHeader(tableColumns));
+            addTableChunk();
+            node.querySelector("table tr").insertAdjacentHTML("beforeend", `
                 <div onclick="addColumnDialog()" style="min-width: 64px; text-align: center;">+</div>
             `)
             currentTableCreateInfo = await getTableCreationInfo("{{ id }}", selectTable);
-            currentTableInfo = tableColumns;
-            currentColumnNames = getTableColumnsNames(TABLE_EDITOR.querySelector("table"))
+            currentColumnNames = getTableColumnsNames(node.querySelector("table"))
         } catch (error) {
             selectNone("No table selected")
-            canSelect = true;
             return null
         }
-
-        try{
-            document.getElementById("table_" + selectTable).classList.add("selected");
-        }catch{}
-
-        currentTable = selectTable;
-        canSelect = true;
-        
-        return currentTable;
     }
+
+    async function addTableChunk(){
+        const records = await getTableRecords("{{ id }}", currentTable, filter, columns, limit, offset);
+        generateChunk(tableElement, records, tableColumns);
+    }
+
 
     function someTableIsSelected(){
         if (!currentTable) {
@@ -216,21 +227,13 @@
         await POP.iframe("Add record into " + currentTable, "/dialogue/addRecord/{{ id }}/" + currentTable, "400px", "400px", "left");
     }
 
-    async function editRecordDialog(primaryKey){
-        if (!primaryKey){
+    async function editRecordDialog(tr){
+        let primaryKey = tr.querySelector("[entry-pk='1']");
+        if (primaryKey == null){
             await POP.alert("Can't edit this record, it doesn't have a primary key")
             return;
         }
-        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey, "400px", "400px", "left");
-    }
-
-    function getRowPrimaryKey(td){
-        const tr = td.parentElement;
-        try{
-            return tr.querySelector("[entry-pk='1']").innerText;
-        }catch{
-            return undefined;
-        }
+        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey.innerText, "400px", "400px", "left");
     }
 
     async function deleteTableDialog(tableName){
@@ -301,7 +304,7 @@
     
     if ("{{ defaultTable }}"){
         select("{{ defaultTable }}")
-        TABLE_LIST.classList.toggle('collapsed')
+        tableList.classList.toggle('collapsed')
     }
     else{
         selectNone();

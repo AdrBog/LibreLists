@@ -18,7 +18,7 @@
     
 
     async function init(){
-        const tableInfo = parent.currentTableInfo;
+        const tableInfo = parent.tableColumns;
         const record = parent.currentRecord;
         primaryKeyColumn = getPrimaryKeyColumn(tableInfo);
         searchData[primaryKeyColumn] = "{{ pk }}";

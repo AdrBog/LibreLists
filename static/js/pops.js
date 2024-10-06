@@ -275,6 +275,7 @@ class Pops {
      * @returns 
      */
     async output(info, title = "Output"){
+        console.log(info);
         const table = generateTable(info["records"], info["header"]);
         const output = await POP.custom([
             {
@@ -309,7 +310,7 @@ class Pops {
             const downloadFile = document.createElement("a");
             downloadFile.href = "data:attachment/text," + encodeURIComponent(tableToCSV(table));
             downloadFile.target = "_blank";
-            downloadFile.download = ID + "_output.csv";
+            downloadFile.download = DATABASE_ID + "_output.csv";
             downloadFile.click();
         }
         return output;

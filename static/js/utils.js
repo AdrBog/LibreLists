@@ -73,6 +73,16 @@ function generateTableRecord(column, value){
     return td;
 }
 
+function generateChunk(node, records, columns){
+    for (const record of records) {
+        const tr = document.createElement("tr");
+        for (const column of columns)
+            tr.appendChild(generateTableRecord(column, record[column["Name"]]));
+        tr.addEventListener("dblclick", () => editRecordDialog(tr))
+        node.appendChild(tr);
+    }
+}
+
 function generateTable(records, columns){
     const table = document.createElement("table");
 
