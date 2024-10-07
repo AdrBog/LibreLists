@@ -5,9 +5,6 @@
 </div>
 <hr>
 
-![https://www.gnu.org/licenses/gpl-3.0.en.html](https://img.shields.io/badge/License-GPL%20v3-blue)
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/adrbog)
-
 Create simple SQLite databases with Libre Lists, then use them in your [Other Apps](https://github.com/AdrBog/OtherApps) applications.
 
 ## Features
