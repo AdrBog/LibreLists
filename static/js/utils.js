@@ -60,6 +60,17 @@ function generateTableRecord(column, value){
         case "URLDATA":
             td.innerHTML = `<img src="${value}">`;
             break;
+        case "IMAGE":
+            if (value)
+                td.innerHTML = `<img src="data:image/png;base64,${value}" alt="Image" />`;
+            break;
+        case "PDF":
+            if (value)
+                td.innerHTML = `<a href="data:application/pdf;base64,${value}" target="_blank"/>View File</a>`;
+            break;
+        case "BLOB":
+            td.innerHTML = `<a href="data:application/octet-stream;base64,${value}" target="_blank"/>View File</a>`;
+            break;
         case "URL":
             td.innerHTML = `<a href="${value}">${value}</a>`;
             break;
@@ -101,23 +112,21 @@ function generateTable(records, columns){
 function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _delete = true){
     const options = {
         "columnType":{
-            "BLOB": "BLOB",
-            "BOOLEAN": "BOOLEAN",
-            "COLOR": "COLOR",
-            "DATE": "DATE",
-            "DATETIME": "DATETIME",
-            "EMAIL": "EMAIL",
-            "INTEGER": "INTEGER",
-            "LONGVARCHAR": "LONGVARCHAR",
-            "MONTH": "MONTH",
-            "NUMBER": "NUMBER",
-            "REAL": "REAL",
-            "TEXT": "TEXT",
-            "TIME": "TIME",
+            "Image": "IMAGE",
+            "PDF": "PDF",
+            "Any File": "BLOB",
+            "Boolean": "BOOLEAN",
+            "Color": "COLOR",
+            "Date": "DATE",
+            "Date and time": "DATETIME",
+            "Email": "EMAIL",
+            "Number": "INTEGER",
+            "Month": "MONTH",
+            "Text": "TEXT",
+            "Time": "TIME",
             "URL": "URL",
-            "URLDATA": "URLDATA",
-            "VARCHAR": "VARCHAR",
-            "WEEK": "WEEK",
+            "Long text": "VARCHAR",
+            "Week": "WEEK",
         },
         "columnPrimaryKey":{
             "": "",
@@ -211,24 +220,15 @@ function getPrimaryKeyColumn(columnList){
 
 function addRowField(column){
     const tr = document.createElement("tr");
-    const checkbox = document.createElement("input");
     const label = document.createElement("label");
     const input = document.createElement("input");
     const select = document.createElement("select");
     const textarea = document.createElement("textarea");
-    let listOfTd = [checkbox, label, input];
+    let listOfTd = [label, input];
     const BOOLEAN_OPTIONS = [0, 1];
-
-    setAttributes(checkbox, {
-        "type": "checkbox",
-        "type2": "checkbox",
-        "name": column["Name"]
-    })
     
     for (const element of [input, select, textarea]){
         setAttributes(element, {
-            "type2": "input",
-            "column": column["Name"],
             "name": column["Name"],
             "id": column["Name"] 
         })
@@ -246,8 +246,6 @@ function addRowField(column){
 
     if (column["Sequence"])
         input.value = column["Sequence"] + 1;
-    else 
-        checkbox.setAttribute("checked", true);
 
     switch(column["Type"].toUpperCase()){
         case "INTEGER":
@@ -280,7 +278,6 @@ function addRowField(column){
             input.setAttribute("type", "email");
             break;
         case "URLDATA":
-            checkbox.removeAttribute("checked");
             input.setAttribute("type", "file");
             tr.setAttribute("file", true);
             break;
@@ -290,20 +287,28 @@ function addRowField(column){
         case "NVARCHAR":
         case "VARCHAR":
         case "LONGVARCHAR":
-            listOfTd = [checkbox, label, textarea];
+            listOfTd = [label, textarea];
             break;
         case "BOOL":
         case "BOOLEAN":
             for (const booleanOption of BOOLEAN_OPTIONS)
                 appendOptionToSelect(booleanOption, booleanOption, select);
-            listOfTd = [checkbox, label, select];
+            listOfTd = [label, select];
+            break;
+        case "IMAGE":
+            input.setAttribute("type", "file");
+            input.setAttribute("accept", "image/*");
+            tr.setAttribute("file", true);
+            break;
+        case "PDF":
+            input.setAttribute("type", "file");
+            input.setAttribute("accept", "application/pdf");
+            tr.setAttribute("file", true);
             break;
         case "BLOB":
-            checkbox.removeAttribute("checked");
-            checkbox.setAttribute("disabled", "disabled");
-            label.setAttribute("disabled", "disabled");
-            input.setAttribute("disabled", "disabled");
-            input.title = "Can't handle binary data";
+            input.setAttribute("type", "file");
+            tr.setAttribute("file", true);
+            break;
         default:
             input.setAttribute("type", "text");
             break;

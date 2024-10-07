@@ -1,5 +1,5 @@
-import os, shutil, sqlite3, json, re
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+import os, shutil, sqlite3, json, re, base64
+from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import abort
 
@@ -12,7 +12,7 @@ ADDONS_FILE = "addons.json"
 LIBRE_LISTS_DB = "LibreLists"
 DATABASE_CONFIG_TABLE = "database_config"
 TABLE_DEFAULT_CONFIG = {}
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 
 # FUNCTIONS
 
@@ -127,26 +127,99 @@ def jsonDatabase(id):
 def jsonTable(id, table):
     records = []
     try:
-        filters = request.args.get('f', type = str)
-        columns = request.args.get('c', default="*", type = str)
+        filters = request.args.get('f', type=str)
+
+        columns = request.args.get('c', default="*", type=str)
+        items = [item.strip() for item in columns.split(',')]
+        quoted_items = [f'"{item}"' if ' ' in item else item for item in items]
+        columns = ', '.join(quoted_items)
+
         limit = request.args.get('limit', default=100, type=int)
         offset = request.args.get('offset', default=0, type=int)
+
         conn = get_db_connection(id)
-        # TODO: Replace this query with safer code
-        #query = "SELECT ? FROM ? LIMIT ?,?"
-        rows = conn.execute(f'SELECT {columns} FROM "{table}" {filters} LIMIT {limit} OFFSET {offset}').fetchall()
+
+        query = f'SELECT {columns} FROM "{table}"'
+
+        print(query)
+        
+        if filters:
+            query += f' WHERE {filters}'
+
+        query += ' LIMIT ? OFFSET ?'
+        
+        rows = conn.execute(query, (limit, offset)).fetchall()
         conn.close()
+
         for row in rows:
             item = {}
             for column in row.keys():
-                if (type(row[column]) != bytes):
-                    item[column] = row[column]
+                if isinstance(row[column], bytes):
+                    item[column] = base64.b64encode(row[column]).decode('utf-8')
                 else:
-                    item[column] = "[Can't display binary data]"
+                    item[column] = row[column]
             records.append(item)
+
         return jsonify(records)
     except sqlite3.Error as error:
-        return jsonify(records)
+        return jsonify(records), 500
+
+@app.route('/upload/<id>/<table>', methods=['POST'])
+def upload(id, table):
+    form_data = {}
+    for key, value in request.form.items():
+        form_data[key] = value
+    for key, file in request.files.items():
+        if file:
+            form_data[key] = base64.b64encode(file.read()).decode('utf-8')
+
+    try:
+        edit = request.args.get('edit', default='0', type=int)
+        primary_key_column = request.args.get('pk_col')
+        primary_key_value = request.args.get('pk_val')
+        conn = get_db_connection(id)
+        cursor = conn.cursor()
+
+        if edit == 1 and primary_key_column and primary_key_value:
+            set_clause = ', '.join(f'"{key}" = ?' for key in form_data.keys())
+            sql = f'UPDATE "{table}" SET {set_clause} WHERE "{primary_key_column}" = ?'
+            cursor.execute(sql, tuple(form_data.values()) + (primary_key_value,))
+        else:
+            columns = ', '.join(f'"{key}"' for key in form_data.keys())
+            placeholders = ', '.join('?' for _ in form_data)
+            sql = f'INSERT INTO "{table}" ({columns}) VALUES ({placeholders})'
+            cursor.execute(sql, tuple(form_data.values()))
+
+        conn.commit()
+        return jsonify(form_data)
+    except sqlite3.Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/delete/row/<id>/<table>', methods=['GET', 'POST'])
+def delete_row(id, table):
+    primary_key_column = request.args.get('pk_col')
+    primary_key_value = request.args.get('pk_val')
+    if not primary_key_column or not primary_key_value:
+        return jsonify({"error": "Primary key column and value must be provided."}), 400
+
+    try:
+        conn = get_db_connection(id)
+        cursor = conn.cursor()
+        sql = f"DELETE FROM {table} WHERE {primary_key_column} = ?"
+        cursor.execute(sql, (primary_key_value,))
+        conn.commit()
+        if cursor.rowcount == 0:
+            return jsonify({"error": "No rows deleted. Check if the ID exists."}), 404
+        return jsonify({"message": "Row deleted successfully."}), 200
+    except sqlite3.Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
 
 @app.route('/dialogue/<page>/<id>', methods=['GET'])
 @app.route('/dialogue/<page>/<id>/<table>', methods=['GET'])

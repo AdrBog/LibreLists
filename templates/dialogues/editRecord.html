@@ -1,9 +1,9 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<form action="javascript:submitUpdate()">
+<form id="uploadForm">
     <table id="row-list"></table>
-    <input type="submit" class="primary" value="Update">
-    <button type="button" onclick="submitDelete()">Delete record</button>
+    <input id="buttonSubmit" type="submit" class="primary" value="Update">
+    <button id="buttonDelete" type="button" onclick="submitDelete()">Delete record</button>
 </form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
@@ -11,85 +11,90 @@
 <script src="{{ addon }}"></script>
 {% endfor %}
 <script>
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams(url.search);
+    const isNew = params.get('new') == 1;
+
     const rowList = document.getElementById("row-list");
-    let oldRecord;
     let primaryKeyColumn;
     const searchData = {};
     
 
     async function init(){
         const tableInfo = parent.tableColumns;
-        const record = parent.currentRecord;
-        primaryKeyColumn = getPrimaryKeyColumn(tableInfo);
-        searchData[primaryKeyColumn] = "{{ pk }}";
-
         for (const column of tableInfo)
             rowList.append(addRowField(column));
-        
-        for (const tr of rowList.querySelectorAll("tr")) {
-            const input = tr.querySelector("[type2='input']");
-            const column = tr.querySelector("label").innerText;
-            input.value = record[column];
+        if (isNew){
+            buttonDelete.style.display = "none";
+            buttonSubmit.setAttribute("value", "Insert");
+        } else {
+            const record = parent.currentRecord;
+            primaryKeyColumn = getPrimaryKeyColumn(tableInfo);
+            searchData[primaryKeyColumn] = "{{ pk }}";
+            
+            for (const tr of rowList.querySelectorAll("tr")) {
+                const input = tr.querySelector("textarea, select, input");
+                const column = tr.querySelector("label").innerText;
+                input.value = record[column];
+            }
         }
-
-        oldRecord = getRecordFromForm(document.querySelector("form"));
-
         document.dispatchEvent(new CustomEvent("generation-done"));
     }
 
-    async function submitUpdate(){
-        const newRecord = {}
-        for (const tr of rowList.querySelectorAll("tr")) {
-            if (!tr.querySelector("[type2='checkbox']").checked)
-                continue;
-            const column = tr.querySelector("label").innerText;
-            let value;
-            if (tr.getAttribute("file") == "true"){
-                let file = tr.querySelector("[type2='input']").files[0];
-                value = await readUploadedFileAsText(file);
-            } else {
-                value = tr.querySelector("[type2='input']").value;
-            }
-            newRecord[column] = value;
-        }
-        
-        const data = await updateRecord("{{ id }}", "{{ table }}", newRecord, searchData);
-        
-        if (data["response"] == "Error"){
-            parent.POP.alert("Error:\n" + data["why"]);
-        }else{
-            parent.POP.alert("Record edited");
-            parent.dispatchEvent(new CustomEvent("record-edited", {
-                detail: {
-                    databaseName: "{{ id }}",
-                    tableName: "{{ table }}",
-                    record: compareRecords(oldRecord, newRecord)
-                }
-            }))
-        }
-        oldRecord = getRecordFromForm(document.querySelector("form"));
-        parent.select("{{ table }}");
+    uploadForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        let formData = new FormData(this);
+        let url;
+        url = (isNew) ?
+            '/upload/{{ id }}/{{ table }}' : 
+            `/upload/{{ id }}/{{ table }}?edit=1&pk_col=${primaryKeyColumn}&pk_val={{pk}}`;
 
-        return false;
-    }
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok)
+                return response.json().then(err => { throw new Error(err.error || 'Unknown error'); });
+            return response.json();
+        })
+        .then(data => {
+            if (isNew){
+                parent.POP.alert("Record added");
+                parent.select("{{ table }}");
+            } else {
+                parent.POP.alert("Record edited");
+                parent.select("{{ table }}");
+            }
+            
+        })
+        .catch((error) => {
+            parent.POP.alert("Error: " + error.message);
+        });
+    });
 
     async function submitDelete(){
         if (await parent.POP.confirm(`Are you sure you want to delete the record where "${primaryKeyColumn}" = '{{pk}}'?`)){
-            const data = await deleteRecord("{{ id }}", "{{ table }}", searchData);
-            if (data["response"] == "Error")
-                parent.POP.alert("Error:\n" + data["why"]);
-            else{
+            const url = `/delete/row/{{ id }}/{{ table }}?pk_col=${primaryKeyColumn}&pk_val={{pk}}`;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok)
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
                 parent.POP.alert("Record deleted");
-                parent.dispatchEvent(new CustomEvent("record-deleted", {
-                    detail: {
-                        databaseName: "{{ id }}",
-                        tableName: "{{ table }}",
-                        record: oldRecord
-                    }
-                }))
-                clearForm();
-            }
-            parent.select("{{ table }}");
+                parent.select("{{ table }}");
+            })
+            .catch(error => {
+                parent.POP.alert("Error: " + error.message);
+            });
         }
     }
 

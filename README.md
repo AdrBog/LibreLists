@@ -36,6 +36,12 @@ source venv/bin/activate
 pip install flask flask-cors
 python -m flask run -p 5001
 ```
+## Documentation
+Future documentation will be added using pydoc
+You can view the documentation using **pdoc**
+```bash
+pdoc app.py
+```
 
 ## Screenshots
 ![Screenshot1](res/1.png)

@@ -224,7 +224,7 @@
     async function addRecordDialog(){
         if (!someTableIsSelected())
             return;
-        await POP.iframe("Add record into " + currentTable, "/dialogue/addRecord/{{ id }}/" + currentTable, "400px", "400px", "left");
+        await POP.iframe("Add record into " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "?new=1", "400px", "400px", "left");
     }
 
     async function editRecordDialog(tr){

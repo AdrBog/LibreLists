@@ -1,4 +1,7 @@
 CHANGELOG
+V 0.4.0
+	- Now Libre Lists can handle binary files (IMAGES, PDF, AND OTHER FILES)
+	- Added chunk system to load large tables faster
 V 0.3.1
 	- New data type URLDATA (NOT BLOB): Now you can save binary files as URL data in your database
 	- New add-on: automation.js to execute commands when creating, editing or deleting a record

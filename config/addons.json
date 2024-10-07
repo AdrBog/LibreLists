@@ -5,8 +5,7 @@
     "edit": [
         "/static/addons/keyboard.js",
         "/static/addons/fancyTables.js",
-        "/static/addons/reorderColumns.js",
-        "/static/addons/automation.js"
+        "/static/addons/reorderColumns.js"
     ],
     "editRecord": [
         "/static/addons/choices.js"

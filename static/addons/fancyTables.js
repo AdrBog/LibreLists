@@ -43,6 +43,8 @@ window.addEventListener("load", () => {
         th[entry-type^="TIME"]::before{content: " ";}
 
         th[entry-type^="BLOB"]::before{content: " ";}
+        th[entry-type^="IMAGE"]::before{content: " ";}
+        th[entry-type^="PDF"]::before{content: " ";}
 
         th[entry-type^="TEXT"]::before{content: "󰦩 ";}
 
