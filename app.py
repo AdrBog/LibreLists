@@ -1,5 +1,5 @@
-import os, shutil, sqlite3, json, re, base64, magic
-from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
+import os, io, shutil, sqlite3, json, re, base64, magic
+from flask import Flask, render_template, request, jsonify, redirect, url_for, abort, send_file
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import abort
 
@@ -129,7 +129,7 @@ def jsonTable(id, table):
     records = []
     try:
         filters = request.args.get('f', type=str)
-
+        replace_blob = request.args.get('replace_blob', default=1, type=int)
         columns = request.args.get('c', default="*", type=str)
         items = [item.strip() for item in columns.split(',')]
         quoted_items = [f'"{item}"' if ' ' in item else item for item in items]
@@ -155,7 +155,10 @@ def jsonTable(id, table):
             for column in row.keys():
                 if isinstance(row[column], bytes):
                     mime_type = MIME.from_buffer(row[column])
-                    item[column] = mime_type + "#" + base64.b64encode(row[column]).decode('utf-8')
+                    if replace_blob == 1 and not mime_type.startswith("image/"):
+                        item[column] = "#BLOB"
+                    else:
+                        item[column] = mime_type + "#" + base64.b64encode(row[column]).decode('utf-8')
                 else:
                     item[column] = row[column]
             records.append(item)
@@ -201,12 +204,12 @@ def upload(id, table):
         if conn:
             conn.close()
 
-@app.route('/delete/row/<id>/<table>', methods=['GET', 'POST'])
+@app.route('/delete/row/<id>/<table>', methods=['POST'])
 def delete_row(id, table):
     primary_key_column = request.args.get('pk_col')
     primary_key_value = request.args.get('pk_val')
     if not primary_key_column or not primary_key_value:
-        return jsonify({"error": "Primary key column and value must be provided."}), 400
+        return jsonify({"error": "Missing required query parameters."}), 400
 
     try:
         conn = get_db_connection(id)
@@ -223,6 +226,39 @@ def delete_row(id, table):
         if conn:
             conn.close()
 
+@app.route('/download/row/<id>/<table>', methods=['GET', 'POST'])
+def download_row(id, table):
+    primary_key_column = request.args.get('pk_col')
+    primary_key_value = request.args.get('pk_val')
+    column = request.args.get('c')
+
+    if not primary_key_column or not primary_key_value or not column:
+        return jsonify({"error": "Missing required query parameters."}), 400
+
+    try:
+        conn = get_db_connection(id)
+        cursor = conn.cursor()
+
+        query = f"SELECT {column} FROM {table} WHERE {primary_key_column} = ?"
+        cursor.execute(query, (primary_key_value,))
+        row = cursor.fetchone()
+        conn.close()
+
+        if row is None:
+            return abort(404, description="Row not found.")
+        if isinstance(row[column], bytes):
+            file_data = row[column]
+            file_stream = io.BytesIO(file_data)
+            mime_type = MIME.from_buffer(row[column])
+        else:
+            file_stream = io.BytesIO(str(row[column]).encode("utf-8"))
+            mime_type = "text/plain"
+        return send_file(file_stream, mimetype=mime_type)
+    except sqlite3.Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/dialogue/<page>/<id>', methods=['GET'])
 @app.route('/dialogue/<page>/<id>/<table>', methods=['GET'])

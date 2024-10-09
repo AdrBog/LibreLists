@@ -61,13 +61,7 @@ function generateTableRecord(column, value){
             td.innerHTML = `<img src="${value}">`;
             break;
         case "IMAGE":
-            if (value)
-                td.innerHTML = `<img src="data:image/png;base64,${value}" alt="Image" />`;
-            break;
         case "PDF":
-            if (value)
-                td.innerHTML = `<a href="data:application/pdf;base64,${value}" target="_blank"/>View File</a>`;
-            break;
         case "BLOB":
             if (value != null){
                 let [mime_type, data] = value.split("#", 2);
@@ -76,24 +70,16 @@ function generateTableRecord(column, value){
                 else {
                     const button = document.createElement("button");
                     button.innerText = "View file";
-                    button.addEventListener("click", () => {
-                        const decodedString = atob(data);
-                        const byteNumbers = new Uint8Array(decodedString.length);
-                        for (let i = 0; i < decodedString.length; i++) {
-                            byteNumbers[i] = decodedString.charCodeAt(i);
-                        }
-                        const dataBlob = new Blob([byteNumbers], { type: mime_type });
-                        const url = URL.createObjectURL(dataBlob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.target = "blank";
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
+                    button.addEventListener("click", (e) => {
+                        const target = e.target;
+                        const tr = target.parentElement.parentElement;
+                        const pK = tr.querySelector("[entry-pk='1']");
+                        if (pK != null)
+                            window.open(`/download/row/${DATABASE_ID}/${currentTable}?pk_col=${pK.getAttribute("column")}&pk_val=${pK.getAttribute("value")}&c=${column["Name"]}`, "_target");
+                        else
+                            POP.alert("Can't view the file, it doesn't have a primary key")
                     })
                     td.appendChild(button);
-                    //td.innerHTML = `<a href="data:${mime_type};base64,${data}" target="_blank"/>View File</a>`;
                 }
             }
             

@@ -5,6 +5,7 @@
     <input id="buttonSubmit" type="submit" class="primary" value="Update">
     <button id="buttonDelete" type="button" onclick="submitDelete()">Delete record</button>
 </form>
+<dialog id="wait">Please wait...</dialog>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
 {% for addon in addons["editRecord"] %}
@@ -41,15 +42,17 @@
         document.dispatchEvent(new CustomEvent("generation-done"));
     }
 
-    uploadForm.addEventListener("submit", function(event) {
+    uploadForm.addEventListener("submit", async function(event) {
         event.preventDefault();
+        if (wait.hasAttribute("open"))
+            return;
         let formData = new FormData(this);
         let url;
         url = (isNew) ?
             '/upload/{{ id }}/{{ table }}' : 
             `/upload/{{ id }}/{{ table }}?edit=1&pk_col=${primaryKeyColumn}&pk_val={{pk}}`;
-
-        fetch(url, {
+        wait.setAttribute("open", "true");
+        await fetch(url, {
             method: 'POST',
             body: formData
         })
@@ -71,6 +74,7 @@
         .catch((error) => {
             parent.POP.alert("Error: " + error.message);
         });
+        wait.removeAttribute("open");
     });
 
     async function submitDelete(){
