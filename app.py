@@ -1,4 +1,4 @@
-import os, shutil, sqlite3, json, re, base64
+import os, shutil, sqlite3, json, re, base64, magic
 from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import abort
@@ -6,6 +6,7 @@ from werkzeug.exceptions import abort
 
 app = Flask(__name__)
 CORS(app)
+MIME = magic.Magic(mime=True)
 PROJECT_DIR = "projects"
 CONFIG_DIR = "config"
 ADDONS_FILE = "addons.json"
@@ -140,8 +141,6 @@ def jsonTable(id, table):
         conn = get_db_connection(id)
 
         query = f'SELECT {columns} FROM "{table}"'
-
-        print(query)
         
         if filters:
             query += f' WHERE {filters}'
@@ -155,7 +154,8 @@ def jsonTable(id, table):
             item = {}
             for column in row.keys():
                 if isinstance(row[column], bytes):
-                    item[column] = base64.b64encode(row[column]).decode('utf-8')
+                    mime_type = MIME.from_buffer(row[column])
+                    item[column] = mime_type + "#" + base64.b64encode(row[column]).decode('utf-8')
                 else:
                     item[column] = row[column]
             records.append(item)
@@ -167,11 +167,14 @@ def jsonTable(id, table):
 @app.route('/upload/<id>/<table>', methods=['POST'])
 def upload(id, table):
     form_data = {}
+    response_data = {}
     for key, value in request.form.items():
         form_data[key] = value
+        response_data[key] = value
     for key, file in request.files.items():
         if file:
-            form_data[key] = base64.b64encode(file.read()).decode('utf-8')
+            form_data[key] = file.read()
+            response_data[key] = base64.b64encode(file.read()).decode('utf-8')
 
     try:
         edit = request.args.get('edit', default='0', type=int)
@@ -191,7 +194,7 @@ def upload(id, table):
             cursor.execute(sql, tuple(form_data.values()))
 
         conn.commit()
-        return jsonify(form_data)
+        return jsonify({"status": "success", "data": response_data}), 200
     except sqlite3.Error as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -208,7 +211,7 @@ def delete_row(id, table):
     try:
         conn = get_db_connection(id)
         cursor = conn.cursor()
-        sql = f"DELETE FROM {table} WHERE {primary_key_column} = ?"
+        sql = f'DELETE FROM "{table}" WHERE "{primary_key_column}" = ?'
         cursor.execute(sql, (primary_key_value,))
         conn.commit()
         if cursor.rowcount == 0:

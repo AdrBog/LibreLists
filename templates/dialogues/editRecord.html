@@ -25,7 +25,7 @@
         for (const column of tableInfo)
             rowList.append(addRowField(column));
         if (isNew){
-            buttonDelete.style.display = "none";
+            buttonDelete.remove();
             buttonSubmit.setAttribute("value", "Insert");
         } else {
             const record = parent.currentRecord;

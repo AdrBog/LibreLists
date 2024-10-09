@@ -30,7 +30,7 @@ git clone https://github.com/AdrBog/LibreLists.git
 cd LibreLists
 python -m venv venv
 source venv/bin/activate
-pip install flask flask-cors
+pip install flask flask-cors python-magic
 python -m flask run -p 5001
 ```
 ## Documentation

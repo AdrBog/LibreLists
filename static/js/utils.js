@@ -69,7 +69,34 @@ function generateTableRecord(column, value){
                 td.innerHTML = `<a href="data:application/pdf;base64,${value}" target="_blank"/>View File</a>`;
             break;
         case "BLOB":
-            td.innerHTML = `<a href="data:application/octet-stream;base64,${value}" target="_blank"/>View File</a>`;
+            if (value != null){
+                let [mime_type, data] = value.split("#", 2);
+                if (mime_type.startsWith("image/"))
+                    td.innerHTML = `<img src="data:${mime_type};base64,${data}" alt="Image" />`;
+                else {
+                    const button = document.createElement("button");
+                    button.innerText = "View file";
+                    button.addEventListener("click", () => {
+                        const decodedString = atob(data);
+                        const byteNumbers = new Uint8Array(decodedString.length);
+                        for (let i = 0; i < decodedString.length; i++) {
+                            byteNumbers[i] = decodedString.charCodeAt(i);
+                        }
+                        const dataBlob = new Blob([byteNumbers], { type: mime_type });
+                        const url = URL.createObjectURL(dataBlob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.target = "blank";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    })
+                    td.appendChild(button);
+                    //td.innerHTML = `<a href="data:${mime_type};base64,${data}" target="_blank"/>View File</a>`;
+                }
+            }
+            
             break;
         case "URL":
             td.innerHTML = `<a href="${value}">${value}</a>`;
@@ -113,8 +140,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     const options = {
         "columnType":{
             "Image": "IMAGE",
-            "PDF": "PDF",
-            "Any File": "BLOB",
+            "File": "BLOB",
             "Boolean": "BOOLEAN",
             "Color": "COLOR",
             "Date": "DATE",
