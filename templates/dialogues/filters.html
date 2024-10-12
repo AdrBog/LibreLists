@@ -1,0 +1,226 @@
+{% extends 'dialogues/base.html' %}
+{% block dialogue %}
+<style>
+    .remove-group-button, .remove-button {
+        min-width: auto;
+        padding: 4px;
+    }
+    .filter-group {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+    }
+    .group-border {
+        background-color: var(--black-01);
+        border: 1px solid var(--black-02);
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .filter-row {
+        margin-bottom: 5px;
+    }
+    .add-condition-button {
+        margin-top: 10px;
+    }
+    .toolbar{
+        margin-bottom: 10px;
+    }
+    .toolbar *{
+        min-width: auto;
+        width: auto;
+    }
+</style>
+<div class="toolbar">
+    <label for="apply-filter">Apply filter</label>
+    <input type="checkbox" name="apply-filter" id="apply-filter">
+</div>
+<div class="toolbar">
+    <button id="add-filter-group">Add Filter Group</button>
+    <button class="primary" id="generate-json">Apply</button>
+</div>
+<hr>
+<div id="filter-container">
+    <div id="filter-group-template" style="display: none;">
+        <div>
+            <div class="group-border">
+                <table id="filter-container" class="group-conditions">
+                    <tr class="filter-row" id="filter-template" style="display: none;">
+                        <td>
+                            <select class="column-select"></select>
+                        </td>
+                        <td>
+                            <select class="operator-select">
+                                <option value="equal">Equal</option>
+                                <option value="contains">Contain</option>
+                                <option value="startsWith">Starts with</option>
+                                <option value="endsWith">Ends with</option>
+                                <option value="greater">Greater</option>
+                                <option value="less">Less</option>
+                                <option value="greaterOrEqual">Greater or equal</option>
+                                <option value="lessOrEqual">Less or equal</option>
+                                <option value="different">Different</option>
+                                <option value="customLike">Custom Like (Advanced)</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="value-input" placeholder="Value">
+                        </td>
+                        <td>
+                            <select class="logical-operator-select">
+                                <option value="OR">OR</option>
+                                <option value="AND">AND</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="remove-button">X</button>
+                        </td>
+                    </tr>
+                </table>
+                <button class="add-condition-button">Add Filter</button>
+            </div>
+            <select class="group-operator-select">
+                <option value="OR">OR</option>
+                <option value="AND">AND</option>
+            </select>
+        </div>
+        <div>
+            <button class="remove-group-button" title="Remove Group">X</button>
+        </div>
+    </div>
+</div>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
+<script>
+    const columnNames = [];
+    const config = parent.config;
+    const DATABASE_ID = "{{ id }}";
+    const activate = getLSConfig("filter_{{ table }}_activate", "0") == "1";
+    document.querySelector("#apply-filter").checked = activate;
+    parent.tableColumns.forEach(e => columnNames.push(e["Name"]));
+
+    JSON.parse(getLSConfig("filter_{{ table }}", "[]")).forEach((e) => {
+        addFilterGroup(e["conditions"], e["operator"])
+    })
+
+    function populateColumnSelect(selectElement) {
+        selectElement.innerHTML = '';
+        columnNames.forEach(column => {
+            const option = document.createElement('option');
+            option.value = column;
+            option.textContent = column;
+            selectElement.appendChild(option);
+        });
+    }
+
+    function addFilter(column = columnNames[0], operator = "equal", value = "", logicalOperator = "OR") {
+        const filterTemplate = document.getElementById('filter-template');
+        const newFilterRow = filterTemplate.cloneNode(true);
+        const columnSelect = newFilterRow.querySelector('.column-select');
+        populateColumnSelect(columnSelect);
+        newFilterRow.style.display = '';
+
+        newFilterRow.removeAttribute('id');
+        newFilterRow.querySelector(".column-select").value = column;
+        newFilterRow.querySelector(".operator-select").value = operator;
+        newFilterRow.querySelector(".value-input").value = value;
+        newFilterRow.querySelector(".logical-operator-select").value = logicalOperator;
+
+        newFilterRow.querySelector('.remove-button').addEventListener('click', () => {
+            newFilterRow.remove();
+        });
+
+        return newFilterRow;
+    }
+
+    function addFilterGroup(filters = [], operator = "OR") {
+        const groupTemplate = document.getElementById('filter-group-template');
+        const newGroup = groupTemplate.cloneNode(true);
+        const groupOperatorSelect = newGroup.querySelector(".group-operator-select");
+        groupOperatorSelect.value = operator;
+        newGroup.style.display = '';
+        newGroup.classList.add("filter-group");
+
+        const groupConditions = newGroup.querySelector('.group-conditions');
+        if (filters.length > 0){
+            filters.forEach(filter => {
+                const filterRow = addFilter(filter.column, filter.operator, filter.value, filter.logicalOperator);
+                groupConditions.appendChild(filterRow);
+            }); 
+        } else {
+            groupConditions.appendChild(addFilter());
+        }
+
+        newGroup.querySelector('.add-condition-button').addEventListener('click', () => {
+            const newFilterRow = addFilter();
+            groupConditions.appendChild(newFilterRow);
+        });
+
+        newGroup.querySelector('.remove-group-button').addEventListener('click', () => {
+            newGroup.remove();
+            updateGroupOperatorVisibility();
+        });
+
+        document.getElementById('filter-container').appendChild(newGroup);
+        updateGroupOperatorVisibility();
+    }
+
+    function updateGroupOperatorVisibility() {
+        const groups = document.querySelectorAll('.filter-group');
+        groups.forEach((group, index) => {
+            const operatorSelect = group.querySelector('.group-operator-select');
+            if (groups.length - 1 == index) {
+                operatorSelect.style.display = 'none';
+            } else {
+                operatorSelect.style.display = '';
+            }
+        });
+    }
+
+    document.getElementById("apply-filter").addEventListener('click', () => {
+        setLSConfig("filter_{{ table }}_activate", (document.getElementById("apply-filter").checked) ? "1" : "0");
+        parent.select("{{ table }}");
+    });
+
+    document.getElementById('add-filter-group').addEventListener('click', () => {
+        addFilterGroup();
+    });
+
+    document.getElementById('generate-json').addEventListener('click', () => {
+        const groups = document.querySelectorAll('.filter-group');
+        const json = [];
+
+        groups.forEach(group => {
+            const groupConditions = group.querySelectorAll('.filter-row:not(#filter-template)');
+            const groupJson = {
+                operator: group.querySelector('.group-operator-select').value,
+                conditions: []
+            };
+
+            groupConditions.forEach(filter => {
+                const column = filter.querySelector('.column-select').value;
+                const operator = filter.querySelector('.operator-select').value;
+                const value = filter.querySelector('.value-input').value;
+                const logicalOperator = filter.querySelector('.logical-operator-select').value;
+
+                const condition = {
+                    column: column,
+                    operator: operator,
+                    value: value
+                };
+
+                if (logicalOperator)
+                    condition.logicalOperator = logicalOperator;
+
+                groupJson.conditions.push(condition);
+            });
+            if (groupJson["conditions"].length > 0)
+                json.push(groupJson);
+        });
+        setLSConfig("filter_{{ table }}", JSON.stringify(json));
+        parent.select("{{ table }}");
+    });
+
+    populateColumnSelect(document.querySelector('.column-select'));
+</script>
+{% endblock %}

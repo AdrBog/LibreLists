@@ -57,17 +57,46 @@ async function getTables(database) {
 }
 
 /**
- * Returns all records of a table
- * @param {*} database 
- * @param {*} tableName 
- * @param {*} filter 
- * @returns 
+ * Fetches all records from a specified table in a given database.
+ *
+ * @param {string} database - The name of the database to query.
+ * @param {string} tableName - The name of the table from which to retrieve records.
+ * @param {string} filter - A filter string to apply to the records (e.g., conditions for selection).
+ * @param {string} [columns="*"] - A comma-separated list of columns to retrieve. Defaults to "*" (all columns).
+ * @param {number} [limit=100] - The maximum number of records to return. Defaults to 100.
+ * @param {number} [offset=0] - The number of records to skip before starting to collect the result set. Defaults to 0.
+ * @returns {Promise<Object>} A promise that resolves to an object containing the retrieved records.
+ * @throws {Error} Throws an error if the fetch request fails or if the response is not valid JSON.
+ *
+ * @example
+ * getTableRecords('myDatabase', 'myTable', 'status=active')
+ *   .then(data => console.log(data))
+ *   .catch(error => console.error('Error fetching records:', error));
  */
-async function getTableRecords(database, tableName, filter, columns = "*", limit = 100, offset = 0) {
-    const res = await fetch(`/json/table/${database}/${tableName}?f=${filter}&c=${columns}&limit=${limit}&offset=${offset}`);
+async function getTableRecords(database, tableName, filters, columns = "*", limit = 100, offset = 0) {
+    const requestBody = {
+        filters: filters,
+        columns: columns,
+        limit: limit,
+        offset: offset
+    };
+
+    const res = await fetch(`/json/table/${database}/${tableName}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!res.ok)
+        throw new Error(`Failed to fetch records: ${res.status} ${res.statusText}`);
+    
+
     const data = await res.json();
     return data;
 }
+
 
 /**
  * Allows to execute a SQL script on a database.

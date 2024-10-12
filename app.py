@@ -2,12 +2,13 @@ import os, io, shutil, sqlite3, json, re, base64, magic
 from flask import Flask, render_template, request, jsonify, redirect, url_for, abort, send_file
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import abort
+from urllib.parse import unquote
 
 
 app = Flask(__name__)
 CORS(app)
+PROJECT_DIR = os.path.join(os.path.expanduser('~'), 'LibreLists')
 MIME = magic.Magic(mime=True)
-PROJECT_DIR = "projects"
 CONFIG_DIR = "config"
 ADDONS_FILE = "addons.json"
 LIBRE_LISTS_DB = "LibreLists"
@@ -32,20 +33,20 @@ def setDefaultLibreListsConfig():
     cur = conn.cursor()
     cur.executescript(f"""
         create table Preferences(KEY TEXT PRIMARY KEY NOT NULL,VALUE TEXT);
-        insert into Preferences values ( 'Other_Apps_host', 'http://127.0.0.1:5000' ); 
+        insert into Preferences values ( 'Other_Apps_host', 'http://127.0.0.1:5000' );
     """)
     cur.executescript(f"""
         create table {DATABASE_CONFIG_TABLE}(KEY TEXT PRIMARY KEY NOT NULL,VALUE TEXT);
-        insert into {DATABASE_CONFIG_TABLE} values ( 'display_name', 'Libre Lists database' ); 
+        insert into {DATABASE_CONFIG_TABLE} values ( 'display_name', 'Libre Lists database' );
     """)
 
 def setDefaultDatabaseConfig(id):
     conn = get_db_connection(id)
     cur = conn.cursor()
-    cur.executescript(f""" 
+    cur.executescript(f"""
         create table {DATABASE_CONFIG_TABLE}( KEY TEXT PRIMARY KEY NOT NULL,VALUE TEXT);
         insert into {DATABASE_CONFIG_TABLE} values ( 'display_name', 'My Database');
-        insert into {DATABASE_CONFIG_TABLE} values ( 'hidden_tables', 'sqlite_sequence,{DATABASE_CONFIG_TABLE}'); 
+        insert into {DATABASE_CONFIG_TABLE} values ( 'hidden_tables', 'sqlite_sequence,{DATABASE_CONFIG_TABLE}');
     """)
 
 # ROUTES
@@ -78,13 +79,12 @@ def create(id):
 
 @app.route('/exec/<id>', methods=('GET', 'POST'))
 def database_exec(id):
-    try: 
+    try:
         conn = get_db_connection(id)
         if request.method == 'POST':
             jsonRequest = request.get_json()
             queries = jsonRequest['query'].split(";")
-            
-            # Generate output
+
             for query in queries:
                 output = {"header": [], "records": []}
                 header = []
@@ -96,7 +96,7 @@ def database_exec(id):
                         headerJSON["Type"] = ""
                         headerJSON["PK"] = 0
                         output["header"].append(headerJSON)
-                    
+
                     for row in result.fetchall():
                         rowJSON = {}
                         for col in range(len(row)):
@@ -124,29 +124,31 @@ def jsonDatabase(id):
     data["tables"] = sorted(data["tables"])
     return jsonify(data)
 
-@app.route('/json/table/<id>/<table>', methods=('GET', 'POST'))
+@app.route('/json/table/<id>/<table>', methods=['POST'])
 def jsonTable(id, table):
     records = []
     try:
-        filters = request.args.get('f', type=str)
-        replace_blob = request.args.get('replace_blob', default=1, type=int)
-        columns = request.args.get('c', default="*", type=str)
+        data = request.get_json()
+
+        filters = data.get('filters', None)
+        replace_blob = data.get('replace_blob', 1)
+        columns = data.get('c', "*")
         items = [item.strip() for item in columns.split(',')]
         quoted_items = [f'"{item}"' if ' ' in item else item for item in items]
         columns = ', '.join(quoted_items)
 
-        limit = request.args.get('limit', default=100, type=int)
-        offset = request.args.get('offset', default=0, type=int)
+        limit = data.get('limit', 100)
+        offset = data.get('offset', 0)
 
         conn = get_db_connection(id)
 
         query = f'SELECT {columns} FROM "{table}"'
-        
+
         if filters:
             query += f' WHERE {filters}'
 
         query += ' LIMIT ? OFFSET ?'
-        
+
         rows = conn.execute(query, (limit, offset)).fetchall()
         conn.close()
 
@@ -165,7 +167,8 @@ def jsonTable(id, table):
 
         return jsonify(records)
     except sqlite3.Error as error:
-        return jsonify(records), 500
+        return jsonify({"error": str(error)}), 500
+
 
 @app.route('/upload/<id>/<table>', methods=['POST'])
 def upload(id, table):
@@ -198,8 +201,8 @@ def upload(id, table):
 
         conn.commit()
         return jsonify({"status": "success", "data": response_data}), 200
-    except sqlite3.Error as e:
-        return jsonify({'error': str(e)}), 500
+    except sqlite3.Error as error:
+        return jsonify({'error': str(error)}), 500
     finally:
         if conn:
             conn.close()
@@ -226,7 +229,7 @@ def delete_row(id, table):
         if conn:
             conn.close()
 
-@app.route('/download/row/<id>/<table>', methods=['GET', 'POST'])
+@app.route('/download/row/<id>/<table>', methods=['GET'])
 def download_row(id, table):
     primary_key_column = request.args.get('pk_col')
     primary_key_value = request.args.get('pk_val')

@@ -18,8 +18,8 @@
         <a href="#" id="navbar-add-column" onclick="addColumnDialog()">Add Column</a>
         <a href="#" id="navbar-add-row" onclick="addRecordDialog()">Add Record</a>
         <hr>
+        <a href="#" onclick="filterDialogue()">Filters</a>
         <a href="#" onclick="displayTableDescription()">Table description</a>
-        <a href="#" onclick="if(someTableIsSelected()){window.open('/json/table/{{ id }}/' + currentTable, '_blank')}">Check JSON table</a>
         <a href="#" onclick="deleteTableDialog(currentTable)">Delete Table</a>
     </div>
 </div>
@@ -77,6 +77,7 @@
     var currentTableInfo;
     var currentTableCreateInfo;
     var currentRecord;
+    var currentRow;
     var currentColumnNames;
     var selectedColumn;
     var clickedElement;
@@ -89,6 +90,8 @@
     var columns;
     var tableColumns;
     var tableElement;
+    var config = loadLSConfig();
+    
 
     tableEditor.addEventListener("click", (e) => {
         COLUMN_MENU.style.visibility = "hidden";
@@ -102,7 +105,7 @@
                 e.target.classList.add("selected");
                 clickedElement = e.target;
                 currentRecord = getRecordFromTr(e.target.parentElement);
-                break;    
+                break;
         }
     });
 
@@ -144,6 +147,10 @@
         offset = 0;
         columns = await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*");
         tableColumns = await getTableColumns("{{ id }}", currentTable, columns);
+        const json = JSON.parse(getLSConfig(`filter_${currentTable}`, "[]"))
+        const applyFilter = getLSConfig(`filter_${currentTable}_activate`, "0") == "1";
+        filter = (applyFilter) ? jsonToSqlGroup(json) : "";
+
         loadDataToTable(tableEditor, currentTable);
 
         try{
@@ -159,7 +166,7 @@
         node.innerHTML = "";
         COLUMN_MENU.style.visibility = "hidden";
 
-        for (const table of tableList.getElementsByTagName("button")) 
+        for (const table of tableList.getElementsByTagName("button"))
                 table.classList.remove("selected");
 
         try {
@@ -227,7 +234,14 @@
         await POP.iframe("Add record into " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "?new=1", "400px", "400px", "left");
     }
 
+    async function filterDialogue(){
+        if (!someTableIsSelected())
+            return;
+            POP.iframe("Filters for " + currentTable, "/dialogue/filters/{{ id }}/" + currentTable, "400px", "400px", "left");
+    }
+
     async function editRecordDialog(tr){
+        currentRow = tr;
         let primaryKey = tr.querySelector("[entry-pk='1']");
         if (primaryKey == null){
             await POP.alert("Can't edit this record, it doesn't have a primary key")
@@ -261,7 +275,7 @@
             if (await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*") != "*"){
                 columnNames[columnNames.indexOf(column)] = newName
                 await setDatabaseConfig("{{ id }}", `table_${tableName}_columns`, columnNames);
-            }  
+            }
             select(tableName)
         } else {
             POP.alert("ERROR \n" + res["why"]);
@@ -275,7 +289,7 @@
                 if (await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*") != "*"){
                     columnNames = columnNames.filter(e => e !== column);
                     await setDatabaseConfig("{{ id }}", `table_${tableName}_columns`, columnNames);
-                }  
+                }
                 select(tableName)
             }
         }
@@ -301,7 +315,7 @@
 
     refreshTableList();
     refreshDatabaseName();
-    
+
     if ("{{ defaultTable }}"){
         select("{{ defaultTable }}")
         tableList.classList.toggle('collapsed')

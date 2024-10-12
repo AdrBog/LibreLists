@@ -67,7 +67,8 @@
                 parent.select("{{ table }}");
             } else {
                 parent.POP.alert("Record edited");
-                parent.select("{{ table }}");
+                //parent.select("{{ table }}");
+                editRow(parent.currentRow, formData)
             }
             
         })

@@ -82,7 +82,7 @@ function generateTableRecord(column, value){
                     td.appendChild(button);
                 }
             }
-            
+
             break;
         case "URL":
             td.innerHTML = `<a href="${value}">${value}</a>`;
@@ -93,7 +93,7 @@ function generateTableRecord(column, value){
         default:
             td.innerText = value;
             break;
-    }  
+    }
     return td;
 }
 
@@ -170,7 +170,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     })
 
     setAttributes(columnName, {
-        "title": "Column name", 
+        "title": "Column name",
         "placeholder": "NAME",
         "value": name,
         "name": "column-name",
@@ -218,7 +218,7 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
     div.append(columnName, columnType, columnPrimaryKey, columnNull, columnExtra, columnExtraList);
     if (_delete)
         div.append(deleteButton);
-    
+
     return div;
 }
 
@@ -238,22 +238,22 @@ function addRowField(column){
     const textarea = document.createElement("textarea");
     let listOfTd = [label, input];
     const BOOLEAN_OPTIONS = [0, 1];
-    
+
     for (const element of [input, select, textarea]){
         setAttributes(element, {
             "name": column["Name"],
-            "id": column["Name"] 
+            "id": column["Name"]
         })
         if (column["NotNull"] != 0)
             element.setAttribute("required", true);
     }
-        
+
 
     setAttributes(label, {
         "for": column["Name"],
         "style": "min-width: 100%;"
     })
-    
+
     label.innerText = column["Name"];
 
     if (column["Sequence"])
@@ -267,6 +267,7 @@ function addRowField(column){
         case "NUMBER":
         case "NUMERIC":
             input.setAttribute("type", "number");
+            input.setAttribute("step", "any");
             break;
         case "DATE":
             input.setAttribute("type", "date");
@@ -325,7 +326,7 @@ function addRowField(column){
             input.setAttribute("type", "text");
             break;
     }
-    
+
     for (const td of listOfTd) {
         const e = document.createElement("td");
         e.append(td);
@@ -368,4 +369,114 @@ function getTableColumnsNames(table){
     return Array.from(table.querySelectorAll("th")).map((x) => {
         return x.innerText
     })
+}
+
+function escapeSingleQuotes(value) {
+    return value.replace(/'/g, "''");
+}
+
+function escapeSpecialCharacters(value) {
+    return value.replace(/[%_ \\]/g, (match) => {
+        return `\\${match}`;
+    });
+}
+
+function quoteColumnName(column) {
+    return `"${column}"`;
+}
+
+function jsonToSqlGroup(groups){
+    let sqlParts = ""
+
+    groups.forEach((v, i) => {
+        sqlParts += `(${jsonToSqlString(v["conditions"])})`
+        if (i != groups.length - 1)
+            sqlParts += ` ${v["operator"]} `
+    })
+    
+    return sqlParts;
+}
+
+function jsonToSqlString(filters) {
+    if (filters.length == 0)
+        return "";
+    const sqlParts = filters.map((filter, index) => {
+        const column = quoteColumnName(filter.column);
+        let value;
+        if (['contains','startsWith','endsWith'].includes(filter.operator))
+            value = escapeSpecialCharacters(escapeSingleQuotes(filter.value))
+        else
+            value = escapeSingleQuotes(filter.value)
+        let operator;
+
+        switch (filter.operator) {
+            case 'equal':
+                operator = '=';
+                return `${column} ${operator} '${value}'`;
+            case 'contains':
+                operator = 'LIKE';
+                return `${column} ${operator} '%${value}%' ESCAPE '\\'`;
+            case 'startsWith':
+                operator = 'LIKE';
+                return `${column} ${operator} '${value}%' ESCAPE '\\'`;
+            case 'endsWith':
+                operator = 'LIKE';
+                return `${column} ${operator} '%${value}' ESCAPE '\\'`;
+            case 'greater':
+                operator = '>';
+                return `${column} ${operator} '${value}'`;
+            case 'less':
+                operator = '<';
+                return `${column} ${operator} '${value}'`;
+            case 'greaterOrEqual':
+                operator = '>=';
+                return `${column} ${operator} '${value}'`;
+            case 'lessOrEqual':
+                operator = '<=';
+                return `${column} ${operator} '${value}'`;
+            case 'different':
+                operator = '!=';
+                return `${column} ${operator} '${value}'`;
+            case 'customLike':
+                operator = 'LIKE';
+                return `${column} ${operator} '${value}' ESCAPE '\\'`;
+            default:
+                throw new Error(`Unsupported operator: ${filter.operator}`);
+        }
+    });
+    
+    filters.forEach((v, i) => {
+        if (i != filters.length - 1)
+            sqlParts[i] += ` ${v.logicalOperator} `;
+    })
+
+    return sqlParts.join(" ");
+}
+
+function loadLSConfig(){
+    const json = localStorage['config'] || '{}';
+    return JSON.parse(json)
+}
+
+function setLSConfig(key, value){
+    if (config[DATABASE_ID] == undefined)
+        config[DATABASE_ID] = {}
+    config[DATABASE_ID][`t_${key}`] = value;
+    localStorage['config'] = JSON.stringify(config);
+}
+
+function getLSConfig(key, defaultValue){
+    if (config[DATABASE_ID] == undefined)
+        config[DATABASE_ID] = {}
+    return config[DATABASE_ID][`t_${key}`] || defaultValue;
+}
+
+function editRow(row, data) {
+    for (const d of data) {
+        const td = row.querySelector(`[column="${d[0]}"]`);
+        if (!["BLOB", "IMAGE", "PDF"].includes(td.getAttribute("entry-type"))) {
+            td.setAttribute("value", d[1]);
+            td.innerText = d[1];
+        }
+    }
 }
