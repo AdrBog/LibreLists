@@ -1,70 +1,74 @@
 /*
-    This add-on simplifies column reordering
+    This add-on simplifies column reordering, just by drag and drop
 */
 
-window.addEventListener("load", () => {
-    const COLUMN_MENU = document.getElementById("column-menu");
-    const MOVE_RIGHT = document.createElement("a");
-    const MOVE_LEFT = document.createElement("a");
-    const FIRST_ELEMENT = COLUMN_MENU.querySelector("a");
+let ths;
+let dragged;
 
-    MOVE_RIGHT.innerText = "Move Right >>";
-    setAttributes(MOVE_RIGHT, {
-        "href": "#",
-        "onclick": "moveColumn(1)"
-    })
-
-    MOVE_LEFT.innerText = "<< Move Left";
-    setAttributes(MOVE_LEFT, {
-        "href": "#",
-        "onclick": "moveColumn(-1)"
-    })
-
-    FIRST_ELEMENT.insertAdjacentElement("afterend", MOVE_LEFT);
-    FIRST_ELEMENT.insertAdjacentElement("afterend", MOVE_RIGHT);
-    FIRST_ELEMENT.insertAdjacentElement("afterend", document.createElement("hr"));
+document.addEventListener("table-selected", e => {
+    prepareHeaders();
 })
 
-function moveArrayItem(array, oldIndex, newIndex) {
-    while (oldIndex < 0)
-        oldIndex += array.length;
-    while (newIndex < 0) 
-        newIndex += array.length;
-    
-    if (newIndex >= array.length) {
-        var k = newIndex - array.length + 1;
-        while (k--)
-            array.push(undefined);
-    }
-    array.splice(newIndex, 0, array.splice(oldIndex, 1)[0]);
-    return array;
-};
+function prepareHeaders() {
+    const ths = document.querySelectorAll('#tableEditor th');
+    let dragged = null;
 
-async function checkIfDatabaseConfigExist(){
-    const data = await SQLQuery(DATABASE_ID, `SELECT name FROM sqlite_master WHERE type='table' AND name='${DATABASE_CONFIG_TABLE}'`)
-    return data["output"]["records"].length
+    ths.forEach(th => {
+        th.draggable = true;
+
+        th.addEventListener('dragstart', (e) => {
+            dragged = th;
+            e.dataTransfer.effectAllowed = 'move';
+            th.classList.add('dragging');
+        });
+
+        th.addEventListener('dragend', () => {
+            th.classList.remove('dragging');
+        });
+
+        th.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            th.classList.add('over');
+        });
+
+        th.addEventListener('dragleave', () => {
+            th.classList.remove('over');
+        });
+
+        th.addEventListener('drop', (e) => {
+            e.preventDefault();
+            th.classList.remove('over');
+            if (th !== dragged) {
+                const parent = dragged.parentNode;
+                if (th.nextSibling === dragged) {
+                    parent.insertBefore(dragged, th);
+                } else {
+                    parent.insertBefore(dragged, th.nextSibling);
+                }
+                updateColumnOrder();
+            }
+        });
+    });
 }
 
-async function checkIfOrderExists(){
-    const order = await getDatabaseConfig(DATABASE_ID, `table_${currentTable}_columns`, "*")
-    if (order == "*"){
-        const columnsNames = currentColumnNames.join(",")
-        await setDatabaseConfig(DATABASE_ID, `table_${currentTable}_columns`, currentColumnNames.join(","))
-        return columnsNames;
-    }  
-    return order
-}
-
-async function moveColumn(where){
-    if (await checkIfDatabaseConfigExist() == 0){
-        POP.alert(`Can't move columns without config table '${DATABASE_CONFIG_TABLE}'`);
-        return;
-    }
-    let oldOrder = await checkIfOrderExists();
-    oldOrder = oldOrder.split(",");
-    let oldIndex = oldOrder.indexOf(selectedColumn);
-    let newOrder = moveArrayItem(oldOrder, oldIndex, oldIndex + where);
-    newOrder = newOrder.filter(function(x) { return x !== undefined; });
-    await setDatabaseConfig(DATABASE_ID, `table_${currentTable}_columns`, newOrder);
+async function updateColumnOrder() {
+    ths = document.querySelectorAll('#tableEditor th');
+    const order = Array.from(ths).map(th => th.textContent.trim()).join(', ');
+    await setDatabaseConfig(DATABASE_ID, `table_${currentTable}_columns`, order);
     select(currentTable);
 }
+
+const style = document.createElement('style');
+style.innerHTML = `
+    #tableEditor th {
+        transition: background-color 0.3s ease;
+    }
+    #tableEditor th.dragging {
+        opacity: 0.5;
+        background-color: #f0f0f0; /* Color de fondo al arrastrar */
+    }
+    #tableEditor th.over {
+        border: 2px dashed #007bff; /* Borde al arrastrar sobre */
+    }
+`;
+document.head.appendChild(style);

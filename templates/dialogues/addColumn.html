@@ -1,39 +1,274 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<form action="javascript:addColumn()">
-    <div id="column-list"></div>
-    <input type="submit" class="primary" value="Add column">
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .hidden{
+        display: none;
+    }
+
+    #column-form{
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+    }
+
+    input, summary, select {
+        margin: 10px auto;
+    }
+    label input {
+        width: auto;
+    }
+    details, details div{
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    ul input, ul button{
+        width: auto;
+    }
+</style>
+<form id="column-form">
+    <div>
+        <div>
+            <label for="column-name">Name:</label>
+            <input type="text" id="column-name" name="column-name" pattern="^[A-Za-z0-9 ]+$" required>
+
+            <label for="column-description">Description:</label>
+            <textarea name="column-description" id="column-description"></textarea>
+    
+            <label for="column-type">Type:</label>
+            <select id="column-type" name="column-type" required>
+                <option value="TEXT">Single Line of Text</option>
+                <option value="VARCHAR">Multiple Lines of Text</option>
+                <option value="NUMBER">Number</option>
+                <option value="BLOB">File</option>
+                <option value="CHOICES">Choices</option>
+                <option value="BOOLEAN">Boolean</option>
+                <option value="DATETIME">Date and Time</option>
+                <option value="URL">Hyperlink</option>
+                <option value="EMAIL">Email</option>
+                <option value="COLOR">Color</option>
+            </select>
+        </div>
+        <hr>
+        <div id="column-options">
+    
+            <div id="text-options">
+                <label for="text-max-length">Maximum Length:</label>
+                <input type="number" id="text-max-length" name="text-max-length" min="1" value="255">
+            </div>
+    
+            <div id="number-options" class="hidden">
+                <label for="number-min">Minimum Value:</label>
+                <input type="number" id="number-min" name="number-min">
+                <label for="number-max">Maximum Value:</label>
+                <input type="number" id="number-max" name="number-max">
+                <label>
+                    <input type="checkbox" id="number-decimal" name="number-decimal">
+                    Accept Decimal Values
+                </label>
+            </div>
+    
+            <div id="file-options" class="hidden">
+                <label for="file-types">Accepted File Types:</label>
+                <div>
+                    <label><input type="checkbox" name="file-types[]" value=".pdf"> PDF</label>
+                    <label><input type="checkbox" name="file-types[]" value="image/*"> Images</label>
+                    <label><input type="checkbox" name="file-types[]" value="video/*"> Videos</label>
+                    <label><input type="checkbox" name="file-types[]" value="audio/*"> Audios</label>
+                    <label><input type="checkbox" name="file-types[]" value="*"> Others</label>
+                </div>
+            </div>
+    
+            <div id="choices-options" class="hidden">
+                <label for="choices-list">Choices:</label>
+                <ul id="choices-list">
+                </ul>
+                <button type="button" id="add-choice">Add Choice</button>
+                <label> <input type="checkbox" name="allow-custom-values" id="allow-custom-values"> Allow custom values </label>
+            </div>
+    
+            <div id="date-options" class="hidden">
+                <label for="date-format">Date Format:</label>
+                <select id="date-format" name="date-format">
+                    <option value="datetime-local">Date and Time</option>
+                    <option value="date">Date</option>
+                    <option value="week">Week</option>
+                    <option value="month">Month</option>
+                    <option value="time">Time</option>
+                </select>
+            </div>
+        </div>
+    
+        <details id="more-options">
+            <summary>More options</summary>
+            <div id="irreversible-options">
+                <label>
+                    <input type="checkbox" name="required" value="true">
+                    Require that this column contains information
+                </label>
+            
+                <label for="default-value">Default Value:</label>
+                <input type="text" id="default-value" name="default-value">
+            </div>
+
+            <label for="custom-validation">Custom Validation: <a href="https://www.w3schools.com/TAGS/att_input_pattern.asp" target="_blank">?</a></label>
+            <input type="text" id="custom-validation" name="custom-validation">
+        </details>
+    </div>
+    <button id="submit" class="primary" type="submit">Create Column</button>
 </form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
-{% for addon in addons["addColumn"] %}
-<script src="{{ addon }}"></script>
-{% endfor %}
 <script>
-    const columnList = document.getElementById("column-list");
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams(url.search);
+    const column = params.get('c');
 
-    async function addColumn(){
-        const columnData = columnList.querySelector("div");
-        const name = columnData.querySelectorAll("input")[0].value;
-        const type = columnData.querySelectorAll("select")[0].value;
-        const constraint = columnData.querySelectorAll("select")[1].value;
-        const _null = columnData.querySelectorAll("select")[2].value;
-        const _default = columnData.querySelectorAll("input")[1].value;
-        const data = await SQLQuery("{{ id }}", `alter table "{{ table }}" add column "${name}" ${type} ${constraint} ${_null} ${_default};`);
+    if (column)
+        editForm()
+    
+    const columnTypeSelect = document.getElementById('column-type');
+    const columnOptionsDiv = document.getElementById('column-options');
+    const textOptionsDiv = document.getElementById("text-options");
+    const numberOptionsDiv = document.getElementById("number-options");
+    const fileOptionsDiv = document.getElementById("file-options");
+    const choicesOptionsDiv = document.getElementById('choices-options');
+    const dateOptionsDiv = document.getElementById("date-options");
+    
+    const choicesList = document.getElementById('choices-list');
+    const addChoiceButton = document.getElementById('add-choice');
 
-        try{
-            if (data["response"] == "Error")
-                parent.POP.alert("Error:\n" + data["why"]);
-            else{
-                parent.POP.alert("Column added");
-                if (await getDatabaseConfig("{{ id }}", "table_{{ table }}_columns", "*") != "*")
-                    await setDatabaseConfig("{{ id }}", "table_{{ table }}_columns", parent.currentColumnNames.join(",") + "," + name);
-                parent.select("{{ table }}");
-            }  
+    async function editForm(){
+        const columnList = await getTableColumns("{{ id }}", "{{ table }}");
+        const columnData = columnList.find((e) => e["name"] == column);
+        if ((columnData["pk"] ?? 0) != 0){
+            document.getElementById("column-options").classList.add("hidden");
+            document.querySelector('[for="column-type"]').classList.add("hidden");
+            document.getElementById("column-type").classList.add("hidden");
+            document.getElementById("more-options").classList.add("hidden");
+        }
+        document.getElementById("submit").innerText = "Save changes";
+        document.getElementById("irreversible-options").classList.add("hidden");
+        const editInput = document.createElement("input");
+        editInput.type = "hidden";
+        editInput.name = "edit";
+        editInput.value = "1";
+        const oldColumnName = document.createElement("input");
+        oldColumnName.type = "hidden";
+        oldColumnName.name = "old-column-name";
+        oldColumnName.value = columnData["name"];
+        document.getElementById("column-form").append(editInput, oldColumnName);
+        if (columnData){
+            columnTypeSelect.value = columnData["type"];
+            document.getElementById("column-name").value = columnData["name"];
+            document.getElementById("column-description").value = columnData["description"] ?? "";
+            document.getElementById("custom-validation").value = columnData["custom_validation"] ?? "";
+            document.getElementById("text-max-length").value = columnData["max_length"] ?? "255";
+            document.getElementById("number-min").value = columnData["min"] ?? "";
+            document.getElementById("number-max").value = columnData["max"] ?? "";
+            document.getElementById("allow-custom-values").checked = columnData["allow_custom_values"] ?? false;
+            document.getElementById("number-decimal").checked = columnData["decimal"] ?? false;
+            document.getElementById("date-format").value = columnData["date_format"] ?? "time";
+            if (columnData["file_types"]){
+                const fileTypes = document.querySelectorAll('input[name="file-types[]"]');
+                fileTypes.forEach(checkbox => {
+                    if (columnData["file_types"].includes(checkbox.value))
+                        checkbox.checked = true;
+                });
+            }
             
-        }catch{}
+            for (const option of columnData["choices"] ?? [])
+                addChoice(option)
+            updateTypeForm();
+        }
     }
 
-    columnList.append(addColumnField("", "TEXT", "", "", false))
+    function addChoice(value = ""){
+        const newChoice = document.createElement('li');
+        newChoice.innerHTML = `
+        <input type="text" name="choices[]" required>
+        <button type="button" class="remove-choice">Remove</button>
+        `;
+        choicesList.appendChild(newChoice);
+        const input = newChoice.querySelector("input");
+        input.value = value;
+        const removeChoiceButtons = document.querySelectorAll('.remove-choice');
+        removeChoiceButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                button.parentElement.remove();
+            });
+        });
+    }
+
+    function updateTypeForm(){
+        for (const c of columnOptionsDiv.children)
+            c.classList.add("hidden");
+
+        switch (columnTypeSelect.value) {
+            case 'TEXT':
+            case 'VARCHAR':
+                textOptionsDiv.classList.remove("hidden");
+                break;
+            case 'NUMBER':
+                numberOptionsDiv.classList.remove("hidden");
+                break;
+            case 'BLOB':
+                fileOptionsDiv.classList.remove("hidden");
+                break;
+            case 'CHOICES':
+                choicesOptionsDiv.classList.remove("hidden");
+                break;
+            case 'DATETIME':
+                dateOptionsDiv.classList.remove("hidden");
+                break;
+        }
+    }
+
+    columnTypeSelect.addEventListener('change', () => {
+        updateTypeForm()
+    });
+
+    addChoiceButton.addEventListener('click', () => {
+        addChoice();
+    });
+
+    document.getElementById('column-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        await fetch("/create/column/{{ id }}/{{ table }}", {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => {
+            if (!response.ok)
+                return response.json().then(err => { throw new Error(err.error || 'Unknown error'); });
+            return response.json();
+        })
+        .then(async function (data) {
+            if (column)
+                parent.POP.alert("Column edited");
+            else
+                parent.POP.alert("Column added");
+            
+            parent.select("{{ table }}");
+            
+        })
+        .catch((error) => {
+            parent.POP.alert("Error: " + error.message);
+        });
+    });
 </script>
 {% endblock %}

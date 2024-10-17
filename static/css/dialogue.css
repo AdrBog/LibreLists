@@ -39,6 +39,16 @@ textarea{
     resize: vertical;
 }
 
+input[type="radio"], input[type="checkbox"]{
+    width: auto;
+    margin-bottom: 14px;
+}
+
+.radio-group {
+    display: grid;
+    grid-template-columns: auto 1fr;
+}
+
 .primary{
     background-color: var(--primary-bg) !important;
     color: var(--primary-fg) !important;

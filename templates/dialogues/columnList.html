@@ -1,0 +1,41 @@
+{% extends 'dialogues/base.html' %}
+{% block dialogue %}
+<form id="columnVisibilityForm"></form>
+<script src="/static/js/global.js"></script>
+<script src="/static/js/utils.js"></script>
+{% for addon in addons["editRecord"] %}
+<script src="{{ addon }}"></script>
+{% endfor %}
+<script>
+    const tableColumns = parent.tableColumns;
+    const form = document.getElementById('columnVisibilityForm');
+
+    tableColumns.forEach(column => {
+        const isChecked = !column.hidden;
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <label>
+                <input type="checkbox" name="${column.name}" onchange="updateVisibility('${column.name}', this.checked)" ${isChecked ? 'checked' : ''}>
+                ${column.name}
+            </label>
+        `;
+        form.appendChild(div);
+    });
+
+    async function updateVisibility(columnName, isVisible) {
+        const hiddenValue = !isVisible;
+        const column = tableColumns.find(col => col.name === columnName);
+    
+        if (column) {
+            const updatedData = {
+                "hidden": hiddenValue,
+                "old-column-name": columnName,
+                "edit": 1
+            };
+            
+            await updateColumnConfig("{{ id }}", "{{ table }}", column.name, updatedData);
+            parent.select("{{ table }}");
+        }
+    }
+</script>
+{% endblock %}

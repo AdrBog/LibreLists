@@ -97,7 +97,7 @@
     const DATABASE_ID = "{{ id }}";
     const activate = getLSConfig("filter_{{ table }}_activate", "0") == "1";
     document.querySelector("#apply-filter").checked = activate;
-    parent.tableColumns.forEach(e => columnNames.push(e["Name"]));
+    parent.tableColumns.forEach(e => columnNames.push(e["name"]));
 
     JSON.parse(getLSConfig("filter_{{ table }}", "[]")).forEach((e) => {
         addFilterGroup(e["conditions"], e["operator"])

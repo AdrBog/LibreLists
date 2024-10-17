@@ -41,10 +41,11 @@ function generateTableHeader(columns){
     const tr = document.createElement("tr");
     for (const column of columns) {
         const th = document.createElement("th");
-        th.id = "button_" + column["Name"];
-        th.setAttribute("entry-type", column["Type"]);
-        th.setAttribute("entry-pk", column["PK"]);
-        th.innerText = column["Name"];
+        th.id = "button_" + column["name"];
+        if (column["hidden"]) th.style.display = "none";
+        th.setAttribute("entry-type", column["type"]);
+        th.setAttribute("entry-pk", column["pk"] ?? 0);
+        th.innerText = column["name"];
         tr.append(th);
     }
     return tr;
@@ -52,11 +53,12 @@ function generateTableHeader(columns){
 
 function generateTableRecord(column, value){
     const td = document.createElement("td");
-    td.setAttribute("entry-pk", column["PK"]);
-    td.setAttribute("entry-type", column["Type"]);
+    td.setAttribute("entry-pk", column["pk"]);
+    td.setAttribute("entry-type", column["type"]);
     td.setAttribute("value", value);
-    td.setAttribute("column", column["Name"]);
-    switch (column["Type"]) {
+    td.setAttribute("column", column["name"]);
+    if (column["hidden"]) td.style.display = "none";
+    switch (column["type"]) {
         case "URLDATA":
             td.innerHTML = `<img src="${value}">`;
             break;
@@ -75,7 +77,7 @@ function generateTableRecord(column, value){
                         const tr = target.parentElement.parentElement;
                         const pK = tr.querySelector("[entry-pk='1']");
                         if (pK != null)
-                            window.open(`/download/row/${DATABASE_ID}/${currentTable}?pk_col=${pK.getAttribute("column")}&pk_val=${pK.getAttribute("value")}&c=${column["Name"]}`, "_target");
+                            window.open(`/download/row/${DATABASE_ID}/${currentTable}?pk_col=${pK.getAttribute("column")}&pk_val=${pK.getAttribute("value")}&c=${column["name"]}`, "_target");
                         else
                             POP.alert("Can't view the file, it doesn't have a primary key")
                     })
@@ -85,10 +87,20 @@ function generateTableRecord(column, value){
 
             break;
         case "URL":
-            td.innerHTML = `<a href="${value}">${value}</a>`;
+            if (value != null) {
+                const a = document.createElement("a");
+                a.href = value;
+                a.innerText = value;
+                td.append(a);
+            }
             break;
         case "EMAIL":
-            td.innerHTML = `<a href="mailto:${value}">${value}</a>`;
+            if (value != null) {
+                const a = document.createElement("a");
+                a.href = "mailto:" + value;
+                a.innerText = value;
+                td.append(a);
+            }
             break;
         default:
             td.innerText = value;
@@ -101,7 +113,7 @@ function generateChunk(node, records, columns){
     for (const record of records) {
         const tr = document.createElement("tr");
         for (const column of columns)
-            tr.appendChild(generateTableRecord(column, record[column["Name"]]));
+            tr.appendChild(generateTableRecord(column, record[column["name"]]));
         tr.addEventListener("dblclick", () => editRecordDialog(tr))
         node.appendChild(tr);
     }
@@ -115,7 +127,7 @@ function generateTable(records, columns){
     for (const record of records) {
         const tr = document.createElement("tr");
         for (const column of columns)
-            tr.appendChild(generateTableRecord(column, record[column["Name"]]));
+            tr.appendChild(generateTableRecord(column, record[column["name"]]));
         table.appendChild(tr);
     }
 
@@ -224,107 +236,96 @@ function addColumnField(name = "", type = "TEXT", constraint = "", _null = "", _
 
 function getPrimaryKeyColumn(columnList){
     for (const column of columnList) {
-        if(column["PK"] != 0)
-            return column["Name"];
+        if(column["pk"] != 0)
+            return column["name"];
     }
     return undefined;
 }
 
-function addRowField(column){
+function addRowField(column) {
     const tr = document.createElement("tr");
     const label = document.createElement("label");
     const input = document.createElement("input");
     const select = document.createElement("select");
     const textarea = document.createElement("textarea");
     let listOfTd = [label, input];
-    const BOOLEAN_OPTIONS = [0, 1];
 
-    for (const element of [input, select, textarea]){
-        setAttributes(element, {
-            "name": column["Name"],
-            "id": column["Name"]
-        })
-        if (column["NotNull"] != 0)
-            element.setAttribute("required", true);
+    for (const element of [input, select, textarea]) {
+        setAttributes(element, { "name": column["name"], "id": column["name"] });
+        if (column["required"]) element.setAttribute("required", column["required"]);
     }
 
+    setAttributes(label, { "for": column["name"], "style": "min-width: 100%;" });
+    label.innerText = column["name"];
+    if (column["description"]) label.title = column["description"];
+    if (column["sequence"]) input.value = column["sequence"] + 1;
+    if ((column["pk"] ?? 0) > 0) input.setAttribute("required", true);
 
-    setAttributes(label, {
-        "for": column["Name"],
-        "style": "min-width: 100%;"
-    })
+    const typeMap = {
+        "INTEGER": "number", "INT": "number", "BIGINT": "number", "REAL": "number",
+        "NUMBER": "number", "NUMERIC": "number", "DATE": "date", "TIME": "time",
+        "DATETIME": "datetime-local", "MONTH": "month", "WEEK": "week", "COLOR": "color",
+        "EMAIL": "email", "URL": "url", "URLDATA": "file", "BLOB": "file",
+        "IMAGE": "file", "PDF": "file", "TEXT": "text"
+    };
 
-    label.innerText = column["Name"];
-
-    if (column["Sequence"])
-        input.value = column["Sequence"] + 1;
-
-    switch(column["Type"].toUpperCase()){
-        case "INTEGER":
-        case "INT":
-        case "BIGINT":
-        case "REAL":
-        case "NUMBER":
-        case "NUMERIC":
-            input.setAttribute("type", "number");
-            input.setAttribute("step", "any");
-            break;
-        case "DATE":
-            input.setAttribute("type", "date");
-            break;
-        case "TIME":
-            input.setAttribute("type", "time");
-            break;
-        case "DATETIME":
-            input.setAttribute("type", "datetime-local");
-            break;
-        case "MONTH":
-            input.setAttribute("type", "month");
-            break;
-        case "WEEK":
-            input.setAttribute("type", "week");
-            break;
-        case "COLOR":
-            input.setAttribute("type", "color");
-            break;
-        case "EMAIL":
-            input.setAttribute("type", "email");
-            break;
-        case "URLDATA":
-            input.setAttribute("type", "file");
+    const inputType = column["type"].toUpperCase();
+    if (typeMap[inputType]) {
+        input.setAttribute("type", typeMap[inputType]);
+        if (column["custom_validation"]) input.setAttribute("pattern", column["custom_validation"])
+        if (["URLDATA", "IMAGE", "PDF", "BLOB"].includes(inputType)) {
             tr.setAttribute("file", true);
-            break;
-        case "URL":
-            input.setAttribute("type", "url");
-            break;
-        case "NVARCHAR":
-        case "VARCHAR":
-        case "LONGVARCHAR":
-            listOfTd = [label, textarea];
-            break;
-        case "BOOL":
-        case "BOOLEAN":
-            for (const booleanOption of BOOLEAN_OPTIONS)
-                appendOptionToSelect(booleanOption, booleanOption, select);
-            listOfTd = [label, select];
-            break;
-        case "IMAGE":
-            input.setAttribute("type", "file");
-            input.setAttribute("accept", "image/*");
-            tr.setAttribute("file", true);
-            break;
-        case "PDF":
-            input.setAttribute("type", "file");
-            input.setAttribute("accept", "application/pdf");
-            tr.setAttribute("file", true);
-            break;
-        case "BLOB":
-            input.setAttribute("type", "file");
-            tr.setAttribute("file", true);
-            break;
-        default:
-            input.setAttribute("type", "text");
-            break;
+            if (column["file_types"] && column["file_types"].length) {
+                input.setAttribute("accept", column["file_types"].join(","));
+            }
+        } else if (["INTEGER", "INT", "BIGINT", "REAL", "NUMBER", "NUMERIC"].includes(inputType)) {
+            if (column["min"]) input.setAttribute("min", column["min"]);
+            if (column["max"]) input.setAttribute("max", column["max"]);
+            if (column["decimal"]) input.setAttribute("step", "any");
+        } else if (["TEXT"].includes(inputType)) {
+            if (column["max_length"]) input.setAttribute("maxlength", column["max_length"]);
+        } else if (["DATE", "DATETIME"].includes(inputType)){
+            if (column["date_format"]) input.setAttribute("type", column["date_format"]);
+        }
+    } else if (["NVARCHAR", "VARCHAR", "LONGVARCHAR"].includes(inputType)) {
+        listOfTd = [label, textarea];
+        if (column["max_length"]) textarea.setAttribute("maxlength", column["max_length"]);
+    } else if (["BOOL", "BOOLEAN"].includes(inputType)) {
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.name = column["name"];
+        checkbox.id = column["name"];
+        listOfTd = [label, checkbox];
+    } else if (inputType === "CHOICES") {
+        if (!column["allow_custom_values"]) {
+            const selectChoice = document.createElement("select");
+            selectChoice.id = column["name"];
+            selectChoice.name = column["name"];
+            [""].concat(column["choices"]).forEach(o => {
+                const option = document.createElement("option");
+                option.value = o;
+                option.innerText = o;
+                selectChoice.append(option);
+            });
+            listOfTd = [label, selectChoice];
+        } else {
+            const dataList = document.createElement("datalist");
+            dataList.id = column["name"] + "_list";
+            column["choices"].forEach(o => {
+                const option = document.createElement("option");
+                option.value = o;
+                option.innerText = o;
+                dataList.append(option);
+            });
+            document.body.append(dataList);
+            input.setAttribute("list", column["name"] + "_list");
+        }
+    } else if (inputType === "DATE") {
+        if (column["date_format"]) {
+            input.setAttribute("type", column["date_format"]);
+        }
+    } else {
+        input.setAttribute("type", "text");
     }
 
     for (const td of listOfTd) {
@@ -334,6 +335,8 @@ function addRowField(column){
     }
     return tr;
 }
+
+
 
 function getRecordFromTr(tr){
     const record = {};
@@ -474,9 +477,11 @@ function getLSConfig(key, defaultValue){
 function editRow(row, data) {
     for (const d of data) {
         const td = row.querySelector(`[column="${d[0]}"]`);
-        if (!["BLOB", "IMAGE", "PDF"].includes(td.getAttribute("entry-type"))) {
-            td.setAttribute("value", d[1]);
-            td.innerText = d[1];
+        if (td != null){
+            if (!["BLOB", "IMAGE", "PDF"].includes(td.getAttribute("entry-type"))) {
+                td.setAttribute("value", d[1]);
+                td.innerText = d[1];
+            }
         }
     }
 }

@@ -19,6 +19,7 @@
         <a href="#" id="navbar-add-row" onclick="addRecordDialog()">Add Record</a>
         <hr>
         <a href="#" onclick="filterDialogue()">Filters</a>
+        <a href="#" onclick="columnListDialog()">Column List</a>
         <a href="#" onclick="displayTableDescription()">Table description</a>
         <a href="#" onclick="deleteTableDialog(currentTable)">Delete Table</a>
     </div>
@@ -45,9 +46,10 @@
     <span id="column-menu-name" style="padding-bottom: 0px; font-weight: bold;"><b>Name</b></span>
     <span id="column-menu-type" style="font-size: 12px;">Type</span>
     <hr>
-    <a href="#" onclick="renameColumnDialog(currentTable, selectedColumn, currentColumnNames)">Rename Column</a>
+    <a href="#" onclick="addColumnDialog(selectedColumn)">Edit Column</a>
     <hr>
-    <a href="#" onclick="deleteColumnDialog(currentTable, selectedColumn, currentColumnNames)" style="color: red;">Delete Column</a>
+    <a href="#" onclick="deleteColumnDialog(currentTable, selectedColumn, currentColumnNames)"
+        style="color: red;">Delete Column</a>
 </div>
 
 <div id="tableList" class="table-list">
@@ -91,11 +93,12 @@
     var tableColumns;
     var tableElement;
     var config = loadLSConfig();
-    
+    var row_count = 0;
+
 
     tableEditor.addEventListener("click", (e) => {
         COLUMN_MENU.style.visibility = "hidden";
-        switch(e.target.nodeName.toLowerCase()){
+        switch (e.target.nodeName.toLowerCase()) {
             case "th":
                 displayColMenu(e.target.innerText);
                 break;
@@ -109,14 +112,14 @@
         }
     });
 
-    async function refreshDatabaseName(){
+    async function refreshDatabaseName() {
         databaseName = await getDatabaseConfig(DATABASE_ID, "display_name", "{{ id }}");
         DATABASE_TITLE.innerText = databaseName;
     }
 
-    async function SQLWindow(title = "SQL Window", _default = ""){
+    async function SQLWindow(title = "SQL Window", _default = "") {
         const query = await POP.sqlwindow(title, _default);
-        if (parseInt(query["Return"]) == 0){
+        if (parseInt(query["Return"]) == 0) {
             const res = await SQLQuery("{{ id }}", query["Properties"]["Query"]);
             if (res["response"] == "Error")
                 await POP.alert("ERROR \n" + res["why"]);
@@ -136,7 +139,7 @@
                 addToTableList(TABLE_LIST_BUTTONS, table);
     }
 
-    function selectNone(message = "Select a table to start"){
+    function selectNone(message = "Select a table to start") {
         tableEditor.innerHTML = message;
         currentTable = null;
         currentTableInfo = null;
@@ -147,40 +150,45 @@
         offset = 0;
         columns = await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*");
         tableColumns = await getTableColumns("{{ id }}", currentTable, columns);
+        row_count = await countRowsInTable("{{ id }}", currentTable);
         const json = JSON.parse(getLSConfig(`filter_${currentTable}`, "[]"))
         const applyFilter = getLSConfig(`filter_${currentTable}_activate`, "0") == "1";
         filter = (applyFilter) ? jsonToSqlGroup(json) : "";
 
         loadDataToTable(tableEditor, currentTable);
 
-        try{
+        try {
             document.getElementById("table_" + currentTable).classList.add("selected");
-        }catch{}
+        } catch { }
+
+        document.dispatchEvent(new CustomEvent('table-selected', {
+            detail: { table: currentTable }
+        }))
 
         return currentTable;
     }
 
 
-    async function loadDataToTable(node, tableName){
+    async function loadDataToTable(node, tableName) {
         const selectTable = tableName;
         node.innerHTML = "";
         COLUMN_MENU.style.visibility = "hidden";
 
         for (const table of tableList.getElementsByTagName("button"))
-                table.classList.remove("selected");
+            table.classList.remove("selected");
 
         try {
             tableElement = document.createElement("table");
             node.appendChild(tableElement)
-            tableElement.parentNode.addEventListener("scroll", () => {
+            tableElement.parentNode.addEventListener("scroll", async () => {
                 const scrollTop = tableEditor.scrollTop;
                 const scrollHeight = tableEditor.scrollHeight;
                 const clientHeight = tableEditor.clientHeight;
                 const nearBottomThreshold = 200;
                 const isNearBottom = scrollTop + clientHeight >= scrollHeight - nearBottomThreshold;
-                if (isNearBottom){
+                if (isNearBottom && offset <= row_count) {
                     offset += limit;
-                    addTableChunk();
+                    await addTableChunk();
                 }
             });
             tableElement.appendChild(generateTableHeader(tableColumns));
@@ -196,13 +204,13 @@
         }
     }
 
-    async function addTableChunk(){
+    async function addTableChunk() {
         const records = await getTableRecords("{{ id }}", currentTable, filter, columns, limit, offset);
         generateChunk(tableElement, records, tableColumns);
     }
 
 
-    function someTableIsSelected(){
+    function someTableIsSelected() {
         if (!currentTable) {
             POP.alert("First, select a table");
             return false;
@@ -210,7 +218,7 @@
             return true;
     }
 
-    function addToTableList(tableList, tableName){
+    function addToTableList(tableList, tableName) {
         const button = document.createElement("button");
         button.innerHTML = tableName;
         button.setAttribute("id", "table_" + tableName);
@@ -218,79 +226,74 @@
         tableList.appendChild(button);
     }
 
-    async function insertTableDialog(){
+    async function insertTableDialog() {
         await POP.iframe("Create table in " + databaseName, "/dialogue/createTable/{{ id }}", "900px", "400px");
     }
 
-    async function addColumnDialog(){
+    async function addColumnDialog(column = "") {
         if (!someTableIsSelected())
             return;
-        await POP.iframe("Add column in " + currentTable, "/dialogue/addColumn/{{ id }}/" + currentTable, "900px", "100px");
+        if (column != "")
+            await POP.iframe("Edit column " + column, "/dialogue/addColumn/{{ id }}/" + currentTable + "?c=" + column, "400px", "400px", "left");
+        else
+            await POP.iframe("Add column in " + currentTable, "/dialogue/addColumn/{{ id }}/" + currentTable, "400px", "400px", "left");
     }
 
-    async function addRecordDialog(){
+    async function addRecordDialog() {
         if (!someTableIsSelected())
             return;
         await POP.iframe("Add record into " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "?new=1", "400px", "400px", "left");
     }
 
-    async function filterDialogue(){
+    async function columnListDialog() {
         if (!someTableIsSelected())
             return;
-            POP.iframe("Filters for " + currentTable, "/dialogue/filters/{{ id }}/" + currentTable, "400px", "400px", "left");
+        await POP.iframe("Column list of " + currentTable, "/dialogue/columnList/{{ id }}/" + currentTable, "400px", "400px");
     }
 
-    async function editRecordDialog(tr){
+    async function filterDialogue() {
+        if (!someTableIsSelected())
+            return;
+        POP.iframe("Filters for " + currentTable, "/dialogue/filters/{{ id }}/" + currentTable, "400px", "400px", "left");
+    }
+
+    async function editRecordDialog(tr) {
         currentRow = tr;
+        
         let primaryKey = tr.querySelector("[entry-pk='1']");
-        if (primaryKey == null){
+        if (primaryKey == null) {
             await POP.alert("Can't edit this record, it doesn't have a primary key")
             return;
         }
-        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey.innerText, "400px", "400px", "left");
+        
+        let pkColumns = Array.from(tr.querySelectorAll("[entry-pk]")).filter(column => column.getAttribute("entry-pk") !== "0");
+        let columnValues = pkColumns.map(column => {
+            return `${column.getAttribute("column")}:${column.innerText}`;
+        }).join(",");
+        await POP.iframe("Edit record in " + currentTable, "/dialogue/editRecord/{{ id }}/" + currentTable + "/" + primaryKey.innerText + "?pkcolumns=" + encodeURIComponent(columnValues), "400px", "400px", "left");
     }
 
-    async function deleteTableDialog(tableName){
+    async function deleteTableDialog(tableName) {
         if (!someTableIsSelected())
             return;
-        if (await POP.confirm("Are you sure you want to delete table \"" + tableName + "\"?")){
+        if (await POP.confirm("Are you sure you want to delete table \"" + tableName + "\"?")) {
             const res = await SQLQuery("{{ id }}", `DROP TABLE IF EXISTS "${tableName}"`);
-            if (res["response"] == "OK"){
+            if (res["response"] == "OK") {
                 document.getElementById("table_" + tableName).remove();
                 selectNone();
             }
         }
     }
 
-    async function renameColumnDialog(tableName, column, columnNames){
-        const newName = await POP.prompt("Enter new name", "text", column);
-        if (!isValid(newName, VALID_NAME_WITH_SPACES)){
-            await POP.alert("Name is not valid")
-            return
-        } else if (!newName){
-            return
-        }
-        const res = await SQLQuery("{{ id }}", `alter table '${tableName}'\nrename column '${column}' to '${newName}'`);
-        if (res["response"] == "OK"){
-            if (await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*") != "*"){
-                columnNames[columnNames.indexOf(column)] = newName
-                await setDatabaseConfig("{{ id }}", `table_${tableName}_columns`, columnNames);
-            }
-            select(tableName)
-        } else {
-            POP.alert("ERROR \n" + res["why"]);
-        }
-    }
-
-    async function deleteColumnDialog(tableName, column, columnNames){
-        if (await POP.confirm(`Are you sure you want to delete column "${column}"?`)){
+    async function deleteColumnDialog(tableName, column, columnNames) {
+        if (await POP.confirm(`Are you sure you want to delete column "${column}"?`)) {
             const res = await SQLQuery("{{ id }}", `alter table '${tableName}' drop column '${column}'`);
-            if (res["response"] == "OK"){
-                if (await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*") != "*"){
+            if (res["response"] == "OK") {
+                if (await getDatabaseConfig("{{ id }}", `table_${tableName}_columns`, "*") != "*") {
                     columnNames = columnNames.filter(e => e !== column);
                     await setDatabaseConfig("{{ id }}", `table_${tableName}_columns`, columnNames);
                 }
-                select(tableName)
+                select(tableName);
             }
         }
     }
@@ -306,7 +309,7 @@
         COLUMN_MENU.style.visibility = "visible";
     }
 
-    async function displayTableDescription(){
+    async function displayTableDescription() {
         if (!someTableIsSelected())
             return;
         const res = await SQLQuery("{{ id }}", `pragma table_info('${currentTable}')`);
@@ -316,11 +319,11 @@
     refreshTableList();
     refreshDatabaseName();
 
-    if ("{{ defaultTable }}"){
+    if ("{{ defaultTable }}") {
         select("{{ defaultTable }}")
         tableList.classList.toggle('collapsed')
     }
-    else{
+    else {
         selectNone();
     }
 </script>

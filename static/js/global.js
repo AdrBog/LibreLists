@@ -116,30 +116,6 @@ async function SQLQuery(database, query) {
 }
 
 /**
- * Allows you to execute a single SQL query on a database.
- * It follows the Python SQLite3 syntax, in which you can combine ? with an array of variables,
- * e.g. query -> "INSERT INTO TABLE VALUES (?,?)", values -> "[name, age]"
- * @param {*} database 
- * @param {*} query 
- * @param {*} values 
- * @returns 
- */
-async function simpleQuery(database, query, values = []) {
-    let simpleQuery = {};
-    simpleQuery["query"] = query;
-    simpleQuery["values"] = values;
-    const res = await fetch("/simplequery/" + database, {
-        method: "POST",
-        body: JSON.stringify({
-            "info": simpleQuery,
-        }),
-        headers: {"Content-type": "application/json; charset=UTF-8"}
-    });
-    const resJSON = await res.json();
-    return resJSON;
-}
-
-/**
  * Returns a value from the Libre Lists database file.
  * @param {*} key 
  * @returns 
@@ -159,11 +135,14 @@ async function getLibreListsConfig(key, defaultValue = ""){
  * @param {*} key 
  * @returns 
  */
-async function getDatabaseConfig(database, key, defaultValue = ""){
-    const data = await SQLQuery(database, `select VALUE from ${DATABASE_CONFIG_TABLE} where KEY = "${key}"`);
+async function getDatabaseConfig(database, key, defaultValue = "") {
     try {
-        return data["output"]["records"][0]["VALUE"];
-    } catch {
+        const data = await fetch(`/download/row/${database}/${DATABASE_CONFIG_TABLE}?pk_col=KEY&pk_val=${key}&c=VALUE`);
+        if (!data.ok) {
+            return defaultValue;
+        }
+        return await data.text();
+    } catch (error) {
         return defaultValue;
     }   
 }
@@ -218,27 +197,58 @@ function tableToCSV(table){
  * @param {*} tableName 
  * @returns 
  */
-async function getTableColumns(database, tableName, columns = "*"){
-    const tableInfo = await SQLQuery(database, `pragma table_info('${tableName}')`);
-    const sequence = await SQLQuery(database, `select * from sqlite_sequence where name='${tableName}'`);
-    let columnArray = []
-    let columnList = (columns == "*") ? tableInfo["output"]["records"] : columns.split(",").map((x) => {
-        return tableInfo["output"]["records"].filter((e) => {
-            return e["name"].toLowerCase() == x.toLowerCase()
-        })[0]
-    })
-    columnList = columnList.filter(function(x) { return x !== undefined; })
-    for (const x in columnList){
-        if (!columnList[x]) continue;
-        let columnInfo = {}
-        columnInfo["Name"] = columnList[x]["name"];
-        columnInfo["Type"] = columnList[x]["type"];
-        columnInfo["NotNull"] = columnList[x]["notnull"];
-        columnInfo["PK"] = columnList[x]["pk"];
-        if (sequence["response"] != "Error")
-            if (columnInfo["PK"] != 0 && sequence["output"]["records"].length > 0)
-                columnInfo["Sequence"] = sequence["output"]["records"][0]["seq"];
-        columnArray.push(columnInfo);
+async function getTableColumns(database, tableName, columns = "*") {
+    const tableInfo = await fetch(`/get_table_config/${database}/${tableName}`);
+    const json = await tableInfo.json();
+    const allColumns = json["table_config"]["columns"];
+
+    if (columns !== "*") {
+        let columnOrder = columns.split(",").map(col => col.trim());
+
+        const validColumns = allColumns.map(col => col.name);
+        
+        columnOrder = columnOrder.filter(colName => validColumns.includes(colName));
+        
+        allColumns.forEach(col => {
+            if (!columnOrder.includes(col.name)) {
+                columnOrder.push(col.name);
+            }
+        });
+
+        newColumnString = columnOrder.join(", ");
+
+        const orderedColumns = columnOrder.map(colName => 
+            allColumns.find(col => col.name === colName)
+        );
+
+        return orderedColumns;
     }
-    return columnArray;
+
+    return allColumns;
+}
+
+async function updateColumnConfig(database, tableName, columnName, updatedData) {
+    const formData = new FormData();
+    formData.append('column-name', columnName);
+    for (const [key, value] of Object.entries(updatedData)) {
+        formData.append(key, value);
+    }
+
+    try {
+        const response = await fetch(`/create/column/${database}/${tableName}`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+
+async function countRowsInTable(database, tableName){
+    const response = await fetch(`/count/rows/${database}/${tableName}`);
+    const count = await response.text();
+    return parseInt(count);
 }

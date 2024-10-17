@@ -15,6 +15,7 @@
     const url = new URL(window.location.href);
     const params = new URLSearchParams(url.search);
     const isNew = params.get('new') == 1;
+    let whereInfo = {};
 
     const rowList = document.getElementById("row-list");
     let primaryKeyColumn;
@@ -23,8 +24,11 @@
 
     async function init(){
         const tableInfo = parent.tableColumns;
+        whereInfo = tableInfo.filter(c => c.pk > 0);
         for (const column of tableInfo)
             rowList.append(addRowField(column));
+        
+            
         if (isNew){
             buttonDelete.remove();
             buttonSubmit.setAttribute("value", "Insert");
@@ -36,10 +40,22 @@
             for (const tr of rowList.querySelectorAll("tr")) {
                 const input = tr.querySelector("textarea, select, input");
                 const column = tr.querySelector("label").innerText;
-                input.value = record[column];
+                try {
+                    if (input.type == "checkbox")
+                        input.checked = record[column] == "on";
+                    else
+                        input.value = record[column];
+                } catch (error) {}
+            }
+
+            for (const pkInfo of whereInfo){
+                const i = document.createElement("input");
+                i.type = "hidden";
+                i.name = "pk[]";
+                i.value = pkInfo.name + ":" + record[pkInfo.name];
+                uploadForm.append(i);
             }
         }
-        document.dispatchEvent(new CustomEvent("generation-done"));
     }
 
     uploadForm.addEventListener("submit", async function(event) {
@@ -47,6 +63,12 @@
         if (wait.hasAttribute("open"))
             return;
         let formData = new FormData(this);
+        
+        for (const checkbox of document.querySelectorAll('input[type="checkbox"]')){
+            if (!checkbox.checked)
+                formData.append(checkbox.id, 'off');
+        }
+
         let url;
         url = (isNew) ?
             '/upload/{{ id }}/{{ table }}' : 
@@ -67,7 +89,6 @@
                 parent.select("{{ table }}");
             } else {
                 parent.POP.alert("Record edited");
-                //parent.select("{{ table }}");
                 editRow(parent.currentRow, formData)
             }
             

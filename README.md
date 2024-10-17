@@ -37,7 +37,7 @@ python -m flask run -p 5001
 Future documentation will be added using pydoc
 You can view the documentation using **pdoc**
 ```bash
-pdoc app.py
+pdoc app.py utils.py
 ```
 
 ## Screenshots

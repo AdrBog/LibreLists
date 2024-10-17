@@ -1,18 +1,36 @@
 {% extends 'dialogues/base.html' %}
 {% block dialogue %}
-<form action="javascript:createTable()">
-    <div>
-        <label for="table-name">Table name:</label><br>
-        <input name="table-name" type="text" id="table-name" pattern="^(?!\s)[a-zA-Z0-9_ ]{1,50}(?&lt;!\s)$" required>
+<form id="create-table">
+    <label for="tableName">Table Name:</label>
+    <input type="text" id="tableName" name="tableName" placeholder="E.g.: My Table" required pattern="^[a-zA-Z0-9 ]+$" title="Only letters, numbers, and spaces are allowed.">
+    <label for="tableTemplate">Select Table Template:</label>
+    <select id="tableTemplate" onchange="loadTemplate()">
+        <option value="">-- Select a Template --</option>
+        <option value="issueTracker">Issue Tracker</option>
+        <option value="assetManager">Asset Manager</option>
+        <option value="employeeDirectory">Employee Directory</option>
+        <option value="projectManagement">Project Management</option>
+        <option value="inventory">Inventory</option>
+        <option value="salesTracker">Sales Tracker</option>
+        <option value="crm">Customer Relationship Management</option>
+        <option value="eventManagement">Event Management</option>
+        <option value="marketingCampaign">Marketing Campaign Tracker</option>
+        <option value="expenseTracker">Expense Tracker</option>
+        <option value="trainingManagement">Training Management</option>
+        <option value="supplierManagement">Supplier Management</option>
+        <option value="productCatalog">Product Catalog</option>
+        <option value="jobApplications">Job Applications</option>
+        <option value="feedbackCollection">Feedback Collection</option>
+        <option value="maintenanceLog">Maintenance Log</option>
+    </select>
+    <hr>
+    <div id="columnContainer">
+        <div class="column"></div>
     </div>
-    <hr>
-    Columns:
-    <div id="column-list"></div>
-    <button type="button" onclick="columnList.append(addColumnField())">+</button>
-    <br>
-    <hr>
-    <br>
-    <input type="submit" value="Create table" class="primary">
+    <button type="button" onclick="addColumn()">Add Column</button>
+    <br><br>
+    <input type="submit" class="primary" value="Create Table">
+    <button type="button" onclick="clearForm(true)">Clear All</button>
 </form>
 <script src="/static/js/global.js"></script>
 <script src="/static/js/utils.js"></script>
@@ -21,46 +39,208 @@
 <script src="{{ addon }}"></script>
 {% endfor %}
 <script>
-    const columnList = document.getElementById("column-list");
+    function loadTemplate() {
+        const template = document.getElementById("tableTemplate").value;
+        clearForm();
 
-    columnList.addEventListener("click", (e) => {
-        if (e.target.getAttribute("delete"))
-            e.target.parentElement.remove();
-    })
-
-    async function createTable(){
-        let queryTables = [];
-        let somePrimaryKey = false;
-        let query;
-        let tableName = document.getElementById("table-name").value;
-        
-        for (const key of columnList.querySelectorAll("div")) {
-            const column = key.querySelectorAll("input")[0].value;
-            const type = key.querySelectorAll("select")[0].value;
-            const constraint = key.querySelectorAll("select")[1].value;
-            const _null = key.querySelectorAll("select")[2].value;
-            const _default = key.querySelectorAll("input")[1].value;
-            if (constraint == "PRIMARY KEY")
-                somePrimaryKey = true;
-            queryTables.push(`"${column}" ${type} ${constraint} ${_null} ${_default}`);
+        switch (template) {
+            case "issueTracker":
+                addColumn("IssueID", "ID");
+                addColumn("Title", "TEXT");
+                addColumn("Description", "VARCHAR");
+                addColumn("Status", "CHOICES");
+                addColumn("AssignedTo", "TEXT");
+                addColumn("CreatedDate", "DATETIME");
+                break;
+            case "assetManager":
+                addColumn("AssetID", "ID");
+                addColumn("AssetName", "TEXT");
+                addColumn("PurchaseDate", "DATETIME");
+                addColumn("Value", "NUMBER");
+                addColumn("Status", "CHOICES");
+                break;
+            case "employeeDirectory":
+                addColumn("EmployeeID", "ID");
+                addColumn("Name", "TEXT");
+                addColumn("Position", "TEXT");
+                addColumn("Department", "TEXT");
+                addColumn("Email", "EMAIL");
+                break;
+            case "projectManagement":
+                addColumn("ProjectID", "ID");
+                addColumn("ProjectName", "TEXT");
+                addColumn("StartDate", "DATETIME");
+                addColumn("EndDate", "DATETIME");
+                addColumn("Status", "CHOICES");
+                break;
+            case "inventory":
+                addColumn("ItemID", "ID");
+                addColumn("ItemName", "TEXT");
+                addColumn("Quantity", "NUMBER");
+                addColumn("Location", "TEXT");
+                break;
+            case "salesTracker":
+                addColumn("SaleID", "ID");
+                addColumn("Product", "TEXT");
+                addColumn("QuantitySold", "NUMBER");
+                addColumn("SaleDate", "DATETIME");
+                addColumn("Customer", "TEXT");
+                break;
+            case "crm":
+                addColumn("CustomerID", "ID");
+                addColumn("Name", "TEXT");
+                addColumn("Email", "EMAIL");
+                addColumn("Phone", "TEXT");
+                addColumn("Address", "TEXT");
+                addColumn("Status", "CHOICES");
+                break;
+            case "eventManagement":
+                addColumn("EventID", "ID");
+                addColumn("EventName", "TEXT");
+                addColumn("Date", "DATETIME");
+                addColumn("Location", "TEXT");
+                addColumn("Organizer", "TEXT");
+                addColumn("Attendees", "NUMBER");
+                break;
+            case "marketingCampaign":
+                addColumn("CampaignID", "ID");
+                addColumn("CampaignName", "TEXT");
+                addColumn("StartDate", "DATETIME");
+                addColumn("EndDate", "DATETIME");
+                addColumn("Budget", "NUMBER");
+                addColumn("Status", "CHOICES");
+                break;
+            case "expenseTracker":
+                addColumn("ExpenseID", "ID");
+                addColumn("Description", "VARCHAR");
+                addColumn("Amount", "NUMBER");
+                addColumn("Date", "DATETIME");
+                addColumn("Category", "CHOICES");
+                addColumn("PaidBy", "TEXT");
+                break;
+            case "trainingManagement":
+                addColumn("TrainingID", "ID");
+                addColumn("TrainingName", "TEXT");
+                addColumn("Date", "DATETIME");
+                addColumn("Duration", "NUMBER");
+                addColumn("Trainer", "TEXT");
+                addColumn("Participants", "NUMBER");
+                break;
+            case "supplierManagement":
+                addColumn("SupplierID", "ID");
+                addColumn("SupplierName", "TEXT");
+                addColumn("ContactPerson", "TEXT");
+                addColumn("Phone", "TEXT");
+                addColumn("Email", "EMAIL");
+                addColumn("Address", "TEXT");
+                break;
+            case "productCatalog":
+                addColumn("ProductID", "ID");
+                addColumn("ProductName", "TEXT");
+                addColumn("Category", "TEXT");
+                addColumn("Price", "NUMBER");
+                addColumn("StockQuantity", "NUMBER");
+                addColumn("Description", "VARCHAR");
+                break;
+            case "jobApplications":
+                addColumn("ApplicationID", "ID");
+                addColumn("ApplicantName", "TEXT");
+                addColumn("PositionApplied", "TEXT");
+                addColumn("DateApplied", "DATETIME");
+                addColumn("Status", "CHOICES");
+                addColumn("Resume", "BLOB");
+                break;
+            case "feedbackCollection":
+                addColumn("FeedbackID", "ID");
+                addColumn("CustomerName", "TEXT");
+                addColumn("FeedbackDate", "DATETIME");
+                addColumn("Rating", "NUMBER");
+                addColumn("Comments", "TEXT");
+                break;
+            case "maintenanceLog":
+                addColumn("MaintenanceID", "ID");
+                addColumn("EquipmentName", "TEXT");
+                addColumn("MaintenanceDate", "DATETIME");
+                addColumn("Description", "VARCHAR");
+                addColumn("Status", "CHOICES");
+                break;
+            default:
+                clearForm(true);
+                break;
         }
-
-        if (!somePrimaryKey)
-            if (!await parent.POP.confirm("You have not created any column with primary key.\nThis will make editing cells more difficult.\nAre your sure you want to continue?"))
-                return;
-
-        query = `create table "${tableName}" (${queryTables.join(",")})`;
-
-        const data = await simpleQuery("{{id}}", query);
-        if (data["response"] == "Error")
-            await parent.POP.alert("Error:\n" + data["why"]);
-        else
-            await parent.POP.alert("Table created");
-        
-        parent.refreshTableList();
     }
 
-    columnList.append(addColumnField("ID", "INTEGER", "PRIMARY KEY", "AUTOINCREMENT", false))
 
+    function addColumn(name = "", type = "TEXT") {
+        const columnContainer = document.getElementById('columnContainer');
+        const columnDiv = document.createElement('div');
+        columnDiv.className = 'column';
+        columnDiv.innerHTML = getColumnHTML();
+        columnDiv.querySelector("input").value = name;
+        columnDiv.querySelector("select").value = type;
+        columnContainer.appendChild(columnDiv);
+    }
+
+    function clearForm(addColumns = false) {
+        document.getElementById('tableName').value = '';
+        document.getElementById('columnContainer').innerHTML = '';
+        if (addColumns) {
+            addColumn("ID", "ID");
+            addColumn();
+        }
+    }
+
+    function removeColumn(button) {
+        const columnDiv = button.parentElement;
+        columnDiv.remove();
+    }
+
+    function getColumnHTML() {
+        return `
+            <label>Column Name:</label>
+            <input type="text" name="columnName[]" placeholder="E.g.: name" required pattern="^[a-zA-Z0-9 ]+$" title="Only letters, numbers, and spaces are allowed.">
+            <label>Column Type:</label>
+            <select name="columnType[]">
+                <option value="TEXT">Single Line of Text</option>
+                <option value="VARCHAR">Multiple Lines of Text</option>
+                <option value="NUMBER">Number</option>
+                <option value="BLOB">File</option>
+                <option value="CHOICES">Choices</option>
+                <option value="BOOLEAN">Boolean</option>
+                <option value="DATETIME">Date and Time</option>
+                <option value="URL">Hyperlink</option>
+                <option value="EMAIL">Email</option>
+                <option value="COLOR">Color</option>
+                <option value="ID">ID</option>
+            </select>
+            <button type="button" onclick="removeColumn(this)">Remove Column</button>
+        `;
+    }
+
+    document.getElementById("create-table").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch("/create/table/{{ id }}", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                parent.POP.alert(`Error: ${errorData.error}`);
+            } else {
+                const successData = await response.json();
+                parent.POP.alert(successData.message);
+                parent.refreshTableList();
+            }
+        } catch (error) {
+            parent.POP.alert("Error:" + error);
+        }
+    })
+
+    addColumn("ID", "ID");
+    addColumn();
 </script>
 {% endblock %}

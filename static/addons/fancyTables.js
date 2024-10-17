@@ -10,16 +10,15 @@ window.addEventListener("load", () => {
             font-family: 'aurulent-sans-mono';
         }
 
-        td[entry-type="BOOLEAN"][value="1"]::after{
+        td[entry-type="BOOLEAN"][value="on"]::after, td[entry-type="BOOLEAN"][value="1"]::after{
             color:var(--fg-2);
             content: "";
         }
 
-        td[entry-type="BOOLEAN"][value="0"]::after{
+        td[entry-type="BOOLEAN"][value="off"]::after, td[entry-type="BOOLEAN"][value="0"]::after{
             color:var(--fg-2);
             content: "";
         }
-
         th[entry-type]::before{
             font-family: 'aurulent-sans-mono';
         }
@@ -32,6 +31,8 @@ window.addEventListener("load", () => {
         th[entry-type^="BOOLEAN"]::before{content: " ";}
 
         th[entry-type^="COLOR"]::before{content: "󰌁 ";}
+
+        th[entry-type^="CHOICES"]::before{content: " ";}
 
         th[entry-type^="DATE"]::before, 
         th[entry-type^="DATETIME"]::before, 
