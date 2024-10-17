@@ -1,11 +1,11 @@
 <div align="center">
   <img src="./res/6.png">
   <h1>Libre Lists</h1>
-  <p>Minimalistic Free and Open Source alternative to Microsoft Lists written in Python and Flask.</p>
+  <p>Free and Open Source alternative to Microsoft Lists written in Python and Flask.</p>
 </div>
 <hr>
 
-Create simple SQLite databases with Libre Lists, then use them in your [Other Apps](https://github.com/AdrBog/OtherApps) applications.
+Create simple SQLite databases with Libre Lists.
 
 ## Features
 - [x] No Ads
